@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException
+from typing import Optional
+from fastapi import APIRouter, Form, HTTPException
 from app.models.user_models import User
 from app.database import database
 from bson import ObjectId
@@ -6,11 +7,20 @@ from bson import ObjectId
 router = APIRouter()
 
 @router.post("/register")
-async def register_user(email: str, password: str, profilePictureURL: str = None, location: str = None, preference: str = None):
+async def register_user(
+    email: str = Form(...),
+    password: str = Form(...),
+    profilePictureURL: Optional[str] = Form(None),
+    location: Optional[str] = Form(None),
+    preference: Optional[str] = Form(None)
+):
     return await User.register(email, password, profilePictureURL, location, preference)
 
 @router.post("/login")
-async def login_user(email: str, password: str):
+async def login_user(
+    email: str = Form(...),
+    password: str = Form(...)
+):
     result = await User.login(email, password)
     return result
     
