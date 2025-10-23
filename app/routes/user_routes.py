@@ -1,19 +1,19 @@
 from fastapi import APIRouter, HTTPException
-from app.models.user_models import RegisteredUser
+from app.models.user_models import User
 from app.database import database
 from bson import ObjectId
 
 router = APIRouter()
 
 @router.post("/register")
-async def register_user(user: RegisteredUser):
-    existing = await database["users"].find_one({"email": user.email})
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
+async def register_user(email: str, password: str, profilePictureURL: str = None, location: str = None, preference: str = None):
+    return await User.register(email, password, profilePictureURL, location, preference)
 
-    await database["users"].insert_one(user.dict())
-    return {"message": "User registered successfully"}
-
+@router.post("/login")
+async def login_user(email: str, password: str):
+    result = await User.login(email, password)
+    return result
+    
 def serialize_user(user_doc):
     """Convert MongoDB _id to string for JSON serialization."""
     user_doc["_id"] = str(user_doc["_id"])

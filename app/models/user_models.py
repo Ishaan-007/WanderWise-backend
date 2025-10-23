@@ -1,20 +1,61 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
+from hashlib import sha256
+from app.services.user_service import UserService
 
 # ---------- Base User ----------
 class User(BaseModel):
-    userID: int
-    userName: str
+    userID: str
+    userName: Optional[str] = None
 
-    async def login(self):
-        pass
+    @classmethod
+    async def register(
+        cls,
+        email: EmailStr,
+        password: str,
+        profilePictureURL: Optional[str] = None,
+        location: Optional[str] = None,
+        preference: Optional[str] = None
+    ):
+        user_data = {
+            "userRole": "Traveller",
+            "email": email,
+            "passwordHash": sha256(password.encode()).hexdigest(),
+            "profilePictureURL": profilePictureURL,
+            "location": location,
+            "preference": preference,
+            "followerCount": 0,
+            "followingCount": 0
+        }
 
-    async def register(self):
-        pass
+        inserted = await UserService.register_user_service(user_data)
+        if inserted.get("message") == "Registration successful":
+            user_data["userID"] = str(inserted.get("inserted_id"))  # Add this
+            return {"success": True, "user": RegisteredUser(**user_data).model_dump()}
+        else:
+            return {"success": False, "error": inserted.get("error")}
 
 
+    @classmethod   
+    async def login(
+        cls,
+        email: EmailStr,
+        password: str
+    ):
+        user_doc = await UserService.get_user_by_email(email)
+        if not user_doc:
+            return {"success": False, "error": "Email not registered"}
+
+        hashed_password = sha256(password.encode()).hexdigest()
+        if hashed_password != user_doc.get("passwordHash"):
+            return {"success": False, "error": "Incorrect password"}
+
+        user_doc["userID"] = str(user_doc["_id"])
+        return {"success": True, "user": RegisteredUser(**user_doc).model_dump()}
+        
 # ---------- Guest ----------
 class GuestUser(User):
+    
     async def openCommunity(self):
         pass
 
@@ -28,6 +69,9 @@ class RegisteredUser(User):
     preference: Optional[str] = None
     followerCount: int = 0
     followingCount: int = 0
+
+    async def login(self):
+        pass
 
     async def updateProfile(self):
         pass
