@@ -76,8 +76,11 @@ class DayPlan(BaseModel):
     #     )
     #     self.timeline.append(item)
 
-    async def displayTimeline(self):
-        return [item.dict() for item in self.timeline]
+    @classmethod
+    async def displayTimeline(cls, trip_id: str, date: str) -> Optional[Dict[str, Any]]:
+        response = await TripService.get_timeline(trip_id, date)
+        return response
+        return [item.dict() for item in cls.timeline]
 
     @classmethod
     async def removeItem(cls, trip_id: str, date: str, itemID: int) -> Dict[str, Any]:

@@ -77,6 +77,18 @@ class TripService:
         if not trip:
             return None
         return trip.get("itinerary", {"dayPlans": []})
+    
+    @staticmethod
+    async def get_timeline(trip_id: str, date: str) -> Optional[Dict[str, Any]]:
+        """Return the itinerary object (or None if trip missing)."""
+        try:
+            trip = await database["trips"].find_one({"_id": ObjectId(trip_id)}, {"itinerary": 1})
+            trip["itinerary"]["dayPlans"] = [dp for dp in trip["itinerary"]["dayPlans"] if dp["date"] == date]
+        except Exception:
+            return None
+        if not trip:
+            return None
+        return trip.get("itinerary", {"dayPlans": []})
 
     @staticmethod
     async def add_dayplan(trip_id: str, dayplan: Dict[str, Any]) -> Dict[str, Any]:

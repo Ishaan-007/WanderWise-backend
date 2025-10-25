@@ -89,6 +89,17 @@ async def add_dayplan(
         return {"success": True}
     return {"success": False, "error": "Could not add day plan"}
 
+@router.post("/trip/{tripID}/itinerary/dayplan/timeline")
+async def showTimeline(
+    tripID: str,
+    date: str = Form(...),  # "YYYY-MM-DD"
+):
+    result = await DayPlan.displayTimeline(tripID, date)
+    return result
+    if result.get("modified_count", 0) > 0:
+        return {"success": True}
+    return {"success": False, "error": "Could not add day plan"}
+
 @router.post("/trip/{tripID}/itinerary/dayplan/delete")
 async def delete_dayplan(
     tripID: str,
