@@ -1,6 +1,8 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from hashlib import sha256
+from app.models.trip_models import TripDashboard
+#from app.services.trip_service import TripService
 from app.services.user_service import UserService
 
 # ---------- Base User ----------
@@ -70,17 +72,22 @@ class RegisteredUser(User):
     followerCount: int = 0
     followingCount: int = 0
 
-    async def login(self):
-        pass
-
     async def updateProfile(self):
         pass
 
     async def changePassword(self):
         pass
 
-    async def openDashboard(self):
-        pass
+    @staticmethod
+    async def openDashboard(userID: str):
+        """
+        Create a TripDashboard instance for this user, load trips from DB and return the dashboard.
+        Route code expects a model (so caller can call .model_dump()).
+        """
+        #dashboard = TripDashboard(userID=userID)
+        dashboard = await TripDashboard.display_trips(userID)
+        return dashboard
+
 
     async def openExploration(self):
         pass

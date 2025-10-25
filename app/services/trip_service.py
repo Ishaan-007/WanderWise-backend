@@ -1,7 +1,7 @@
 # app/services/trip_service.py
 from app.database import database
 from bson import ObjectId
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 class TripService:
     @staticmethod
@@ -62,3 +62,88 @@ class TripService:
     async def delete_trip(trip_id: str):
         result = await database["trips"].delete_one({"_id": ObjectId(trip_id)})
         return result.deleted_count
+
+class ItineraryService:
+    @staticmethod
+    async def get_itinerary(trip_id: str) -> Optional[Dict[str, Any]]:
+        trip = await database["trips"].find_one({"_id": ObjectId(trip_id)}, {"itinerary": 1})
+        if not trip:
+            return None
+        itinerary = trip.get("itinerary", {"dayPlans": []})
+        # ensure no ObjectId leakage
+        return itinerary
+
+    @staticmethod
+    async def add_dayplan(trip_id: str, dayplan: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Add a DayPlan object to itinerary.dayPlans.
+        dayplan should be a dict like {"date": "YYYY-MM-DD", "timeline": [...]}
+        """
+        result = await database["trips"].update_one(
+            {"_id": ObjectId(trip_id)},
+            {"$push": {"itinerary.dayPlans": dayplan}}
+        )
+        return {"modified_count": getattr(result, "modified_count", 0)}
+
+    @staticmethod
+    async def add_itinerary_item(trip_id: str, date: str, item: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Add an ItineraryItem to an existing DayPlan with the given date.
+        If the day plan does not exist, create it with the item as the first timeline entry.
+        """
+        # Try to push onto existing dayPlan.timeline using positional $ operator
+        res = await database["trips"].update_one(
+            {"_id": ObjectId(trip_id), "itinerary.dayPlans.date": date},
+            {"$push": {"itinerary.dayPlans.$.timeline": item}}
+        )
+        if getattr(res, "modified_count", 0) > 0:
+            return {"modified_count": res.modified_count, "created_dayplan": False}
+
+        # DayPlan not found — create one
+        dayplan = {"date": date, "timeline": [item]}
+        res2 = await database["trips"].update_one(
+            {"_id": ObjectId(trip_id)},
+            {"$push": {"itinerary.dayPlans": dayplan}}
+        )
+        return {"modified_count": getattr(res2, "modified_count", 0), "created_dayplan": True}
+
+    @staticmethod
+    async def remove_itinerary_item(trip_id: str, date: str, itemID: int) -> Dict[str, Any]:
+        """
+        Remove an itinerary item identified by itemID from the DayPlan with given date.
+        Uses arrayFilters to target the correct dayPlan.
+        """
+        try:
+            res = await database["trips"].update_one(
+                {"_id": ObjectId(trip_id)},
+                {"$pull": {"itinerary.dayPlans.$[d].timeline": {"itemID": itemID}}},
+                array_filters=[{"d.date": date}]
+            )
+            return {"modified_count": getattr(res, "modified_count", 0)}
+        except Exception as e:
+            return {"error": str(e)}
+
+    @staticmethod
+    async def update_itinerary_item(trip_id: str, date: str, itemID: int, updates: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Update fields of an itinerary item. Uses arrayFilters to pinpoint the item.
+        'updates' can contain keys: startTime, endTime, cost, notes
+        """
+        if not updates:
+            return {"modified_count": 0}
+
+        # construct $set with arrayFilters for both dayplan and item
+        set_ops = {}
+        for k, v in updates.items():
+            # map to path: itinerary.dayPlans.$[d].timeline.$[i].<k>
+            set_ops[f"itinerary.dayPlans.$[d].timeline.$[i].{k}"] = v
+
+        try:
+            res = await database["trips"].update_one(
+                {"_id": ObjectId(trip_id)},
+                {"$set": set_ops},
+                array_filters=[{"d.date": date}, {"i.itemID": itemID}]
+            )
+            return {"modified_count": getattr(res, "modified_count", 0)}
+        except Exception as e:
+            return {"error": str(e)}

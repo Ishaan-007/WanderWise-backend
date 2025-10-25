@@ -147,21 +147,44 @@ class Trip(BaseModel):
 
 
 # --- Dashboard Container ---
+# app/models/trip_models.py
 class TripDashboard(BaseModel):
+    #userID: str
     trips: List[Trip] = []
 
-    async def displayTrips(self):
-        return [await t.displayTripSummary() for t in self.trips]
+    # @staticmethod
+    # async def get_user_dashboard(userID: str):
+        
+        
+    async def createTrip(self, userID: str, name: str, destination: str, startDate: str, endDate: str, budget: float):
+        # Create trip object
+        new_trip = Trip(
+            userID=userID,
+            name=name,
+            destination=destination,
+            startDate=startDate,
+            endDate=endDate,
+            budget=budget
+        )
+        payload = new_trip.model_dump()
+        payload.pop("tripID", None)  # ensure DB generates _id
 
-    async def createTrip(self, trip: Trip, userID: str):
-        await trip.createTrip(userID)
-        self.trips.append(trip)
-
-    async def openTrip(self, tripID: str) -> Optional[Trip]:
-        for trip in self.trips:
-            if trip.tripID == tripID:
-                return trip
-        return None
+        # Save to DB via service
+        result = await TripService.create_trip(payload)
+        if result.get("inserted_id"):
+            new_trip.tripID = result["inserted_id"]
+            self.trips.append(new_trip)
+            return {"success": True, "trip": new_trip.model_dump()}
+        return {"success": False, "error": "Creation failed"}
+    
+    @staticmethod
+    async def display_trips(userID: str):
+        trips_data = await TripService.get_trips_by_user(userID)
+        return [Trip(**t) for t in trips_data]
 
     async def deleteTrip(self, tripID: str):
-        self.trips = [trip for trip in self.trips if trip.tripID != tripID]
+        deleted = await TripService.delete_trip(tripID)
+        if deleted:
+            self.trips = [trip for trip in self.trips if trip.tripID != tripID]
+            return {"success": True}
+        return {"success": False, "error": "Trip not found"}

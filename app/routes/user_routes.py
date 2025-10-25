@@ -1,6 +1,6 @@
 from typing import Optional
 from fastapi import APIRouter, Form, HTTPException
-from app.models.user_models import User
+from app.models.user_models import User, RegisteredUser
 from app.database import database
 from bson import ObjectId
 
@@ -34,3 +34,9 @@ async def get_users():
     users = await database["users"].find().to_list(100)
     serialized_users = [serialize_user(user) for user in users]
     return serialized_users
+
+@router.get("/dashboard/{userID}")
+async def open_dashboard(userID: str):
+    #user = RegisteredUser(userID=userID)  # Normally injected via auth
+    dashboard = await RegisteredUser.openDashboard(userID)
+    return dashboard
