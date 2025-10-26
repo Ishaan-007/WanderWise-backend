@@ -68,6 +68,25 @@ class Post(BaseModel):
             return {"error": "Post not found"}
         except Exception as e:
             return {"error": str(e)}
+        
+    @classmethod    
+    async def add_like(cls, community_id: str, post_id: int) -> Dict[str, Any]:
+        """Increment the like count of a post."""
+        try:
+            res = await database["communities"].find_one_and_update(
+                {"_id": ObjectId(community_id), "posts.postID": post_id},
+                {"$inc": {"posts.$.likes": 1}},
+                return_document=True
+            )
+
+            if not res:
+                return {"error": "Post not found"}
+
+            # Get updated likes count for that post
+            updated_post = next((p for p in res.get("posts", []) if p["postID"] == post_id), None)
+            return {"likes": updated_post.get("likes")} if updated_post else {"error": "Post not found after update"}
+        except Exception as e:
+            return {"error": str(e)}
 
 
 class Community(BaseModel):

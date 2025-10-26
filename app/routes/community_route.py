@@ -85,3 +85,11 @@ async def view_trip_posts(communityID: str):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+@router.post("/community/{communityID}/post/{postID}/like")
+async def like_post(communityID: str, postID: int):
+    """Like a post. Increments the like count."""
+    result = await Post.add_like(communityID, postID)
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return {"success": True, "likes": result.get("likes")}
