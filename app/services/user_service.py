@@ -21,3 +21,23 @@ class UserService:
     @staticmethod
     async def update_user(email: str, data: dict):
         return await database["users"].update_one({"email": email}, {"$set": data})
+
+    @staticmethod
+    async def get_all_communities():
+        """Get all communities with their basic information (excluding posts for performance)"""
+        try:
+            communities = []
+            cursor = database["communities"].find({}, {
+                "_id": 1,
+                "name": 1,
+                "description": 1,
+                "creatorID": 1,
+                "posts": {"$slice": 0}  # Exclude posts for performance
+            })
+            async for community in cursor:
+                community["communityID"] = str(community["_id"])
+                del community["_id"]  # Remove MongoDB _id
+                communities.append(community)
+            return {"success": True, "communities": communities}
+        except Exception as e:
+            return {"success": False, "error": str(e)}

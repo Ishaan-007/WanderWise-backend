@@ -40,3 +40,10 @@ async def open_dashboard(userID: str):
     #user = RegisteredUser(userID=userID)  # Normally injected via auth
     dashboard = await RegisteredUser.openDashboard(userID)
     return dashboard
+
+@router.get("/communities")
+async def get_communities():
+    """Get all communities - accessible by both registered and guest users"""
+    from app.models.user_models import GuestUser
+    guest_user = GuestUser(userID="guest")
+    return await guest_user.openCommunity()

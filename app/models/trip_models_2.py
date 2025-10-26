@@ -251,8 +251,68 @@ class Trip(BaseModel):
         # Placeholder for future booking integration
         pass
 
-    async def shareTrip(self):
-        pass
+    async def shareTrip(self, community_id: str, author_id: str, title: str, content: str) -> Dict[str, Any]:
+        """
+        Share this trip as a post in a community.
+        Includes the trip's itinerary information in the post.
+        """
+        try:
+            from app.models.community_models import Post
+            
+            # Get the trip's itinerary details
+            itinerary_data = await TripService.get_itinerary(self.tripID)
+            if not itinerary_data:
+                return {"error": "Trip itinerary not found"}
+            
+            # Prepare trip summary for the post
+            trip_summary = {
+                "tripID": self.tripID,
+                "name": self.name,
+                "destination": self.destination,
+                "startDate": self.startDate,
+                "endDate": self.endDate,
+                "budget": self.budget,
+                "totalCost": self.totalCost,
+                "itinerary": itinerary_data
+            }
+            
+            # Create enhanced content that includes trip details
+            # enhanced_content = f"{content}\n\n--- Trip Details ---\n"
+            # enhanced_content += f"Destination: {self.destination}\n"
+            # enhanced_content += f"Duration: {self.startDate} to {self.endDate}\n"
+            # enhanced_content += f"Budget: ${self.budget}\n"
+            # enhanced_content += f"Total Cost: ${self.totalCost}\n\n"
+            # enhanced_content += "Full itinerary details are included in this post."
+            
+            # Create the post with trip information
+            result = await Post.create(
+                community_id=community_id,
+                author_id=author_id,
+                title=title,
+                content=content,
+                content_type="trip_share"
+            )
+            
+            if "error" in result:
+                return result
+            
+            # Add trip data to the created post
+            created_post = result["created_post"]
+            created_post["tripData"] = trip_summary
+            
+            # Update the post in the database with trip data
+            from app.database import database
+            from bson import ObjectId
+            
+            await database["communities"].update_one(
+                {"_id": ObjectId(community_id), "posts.postID": created_post["postID"]},
+                {"$set": {"posts.$.tripData": trip_summary}}
+            )
+            
+            return {"success": True, "post": created_post}
+            
+        except Exception as e:
+            return {"error": f"Could not share trip: {str(e)}"}
 
     async def publishOnWanderWise(self, content: str):
         pass

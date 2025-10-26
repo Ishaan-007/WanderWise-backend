@@ -59,7 +59,9 @@ class User(BaseModel):
 class GuestUser(User):
     
     async def openCommunity(self):
-        pass
+        """Return all community information for guest users"""
+        from app.services.user_service import UserService
+        return await UserService.get_all_communities()
 
 
 # ---------- Registered User ----------
@@ -96,7 +98,9 @@ class RegisteredUser(User):
         pass
 
     async def openCommunity(self):
-        pass
+        """Return all community information for registered users"""
+        from app.services.user_service import UserService
+        return await UserService.get_all_communities()
 
     async def displayProfileDetails(self):
         pass

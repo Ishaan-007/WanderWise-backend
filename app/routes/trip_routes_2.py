@@ -264,3 +264,37 @@ async def delete_itinerary_item(
     if result.get("modified_count", 0) > 0:
         return {"success": True}
     return {"success": False, "error": result.get("error", "Item not found")}
+
+@router.post("/trip/{tripID}/share")
+async def share_trip(
+    tripID: str,
+    communityID: str = Form(...),
+    authorID: str = Form(...),
+    title: str = Form(...),
+    content: str = Form(...)
+):
+    """
+    Share a trip as a post in a community.
+    The post will include the trip's itinerary information.
+    """
+    try:
+        # Get the trip data first
+        trip_data = await TripService.get_trip_summary_from_db(authorID, tripID)
+        if "error" in trip_data:
+            return {"success": False, "error": trip_data["error"]}
+        
+        # Create a Trip instance with the data
+        trip = Trip(**trip_data)
+        trip.tripID = tripID
+        trip.userID = authorID
+        
+        # Share the trip
+        result = await trip.shareTrip(communityID, authorID, title, content)
+        
+        if "error" in result:
+            return {"success": False, "error": result["error"]}
+        
+        return {"success": True, "message": "Trip shared successfully", "post": result["post"]}
+        
+    except Exception as e:
+        return {"success": False, "error": str(e)}
