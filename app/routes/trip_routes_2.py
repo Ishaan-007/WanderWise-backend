@@ -1,8 +1,11 @@
 # app/routes/trip_routes.py
 from typing import Optional
-from fastapi import APIRouter, Form, HTTPException
-from app.models.trip_models_2 import DayPlan, Itinerary, ItineraryItem, Trip, TripDashboard
+from fastapi import APIRouter, Form, HTTPException, UploadFile, File
+from app.models.trip_models_2 import DayPlan, Itinerary, ItineraryItem, Trip, TripDashboard, Booking, Bookings
 from app.services.trip_service_2 import TripService
+from fastapi.responses import FileResponse
+import tempfile
+import os
 
 router = APIRouter()
 
@@ -89,6 +92,103 @@ async def add_dayplan(
         return {"success": True}
     return {"success": False, "error": "Could not add day plan"}
 
+# -----------------------
+# BOOKING ENDPOINTS
+# -----------------------
+
+@router.post("/trip/{tripID}/booking/add")
+async def add_booking(
+    tripID: str,
+    bookingType: str = Form(...),  # "flight", "hotel", etc.
+    provider: str = Form(...),
+    bookingDate: str = Form(...),  # "YYYY-MM-DD"
+    bookingReference: str = Form(...),
+    amount: float = Form(...),
+    notes: Optional[str] = Form(None),
+    pdfFile: Optional[UploadFile] = File(None)
+):
+    """Add a new booking with optional PDF attachment."""
+    try:
+        pdf_data = None
+        if pdfFile:
+            pdf_data = await pdfFile.read()
+
+        result = await Booking.addBooking(
+            trip_id=tripID,
+            booking_type=bookingType,
+            provider=provider,
+            booking_date=bookingDate,
+            booking_reference=bookingReference,
+            amount=amount,
+            pdf_file=pdf_data,
+            notes=notes
+        )
+        
+        if "error" in result:
+            return {"success": False, "error": result["error"]}
+        return {"success": True, "booking": result}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@router.get("/trip/{tripID}/bookings")
+async def get_bookings(tripID: str):
+    """Get all bookings for a trip."""
+    try:
+        bookings = await Bookings.getBookings(tripID)
+        return {"success": True, "bookings": bookings}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@router.get("/trip/{tripID}/booking/{bookingID}/pdf")
+async def get_booking_pdf(tripID: str, bookingID: int):
+    """Get the PDF file for a specific booking."""
+    try:
+        pdf_data = await Booking.getBookingPDF(tripID, bookingID)
+        if not pdf_data:
+            raise HTTPException(status_code=404, detail="PDF not found")
+
+        # Create a temporary file to serve
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+            tmp.write(pdf_data)
+            tmp_path = tmp.name
+
+        # Return the PDF file
+        return FileResponse(
+            tmp_path,
+            media_type="application/pdf",
+            filename=f"booking_{bookingID}.pdf",
+            background=None  # Run in the main thread to ensure file cleanup
+        )
+    except Exception as e:
+        if "tmp_path" in locals():
+            os.unlink(tmp_path)
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/trip/{tripID}/booking/{bookingID}")
+async def delete_booking(tripID: str, bookingID: int):
+    """Delete a booking."""
+    try:
+        result = await Bookings.deleteBooking(tripID, bookingID)
+        if result.get("modified_count", 0) > 0:
+            return {"success": True}
+        return {"success": False, "error": "Booking not found"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+@router.put("/trip/{tripID}/booking/{bookingID}/status")
+async def update_booking_status(
+    tripID: str,
+    bookingID: int,
+    status: str = Form(...)  # "confirmed", "pending", "cancelled"
+):
+    """Update booking status."""
+    try:
+        result = await Bookings.updateBookingStatus(tripID, bookingID, status)
+        if result.get("modified_count", 0) > 0:
+            return {"success": True}
+        return {"success": False, "error": "Could not update booking status"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 @router.post("/trip/{tripID}/itinerary/dayplan/timeline")
 async def showTimeline(
     tripID: str,

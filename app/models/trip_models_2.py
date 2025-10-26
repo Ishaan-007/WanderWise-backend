@@ -1,8 +1,9 @@
 # app/models/trip_models.py
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
-from datetime import time
+from datetime import time, datetime
 from app.services.trip_service_2 import TripService
+import base64
 
 # --- Leaf Model: ItineraryItem ---
 class ItineraryItem(BaseModel):
@@ -45,7 +46,8 @@ class DayPlan(BaseModel):
         """
         Add an itinerary item:
         1) fetch itinerary via service to compute next itemID
-        2) delegate to service.add_itinerary_item
+        2) Create ItineraryItem object
+        3) delegate to service.add_itinerary_item
         """
         itinerary = await TripService.get_itinerary(trip_id)
         if itinerary is None:
@@ -57,14 +59,16 @@ class DayPlan(BaseModel):
         else:
             next_id = 1
 
-        item = {
-            "itemID": next_id,
-            "startTime": startTime,
-            "endTime": endTime,
-            "cost": cost,
-            "notes": notes
-        }
-        return await TripService.add_itinerary_item(trip_id, date, item)
+        # Create ItineraryItem object to demonstrate object creation
+        new_item = ItineraryItem(
+            itemID=next_id,
+            startTime=startTime,
+            endTime=endTime,
+            cost=cost,
+            notes=notes
+        )
+        
+        return await TripService.add_itinerary_item(trip_id, date, new_item.model_dump())
     
     # async def addItineraryItem(self, startTime: str, endTime: str, cost: float, notes: Optional[str] = None):
     #     item = ItineraryItem(
@@ -97,7 +101,17 @@ class Itinerary(BaseModel):
     @classmethod
     async def addDayPlan(cls, trip_id: str, date: str) -> Dict[str, Any]:
         """Add a day plan to a trip via service."""
-        return await TripService.add_dayplan(trip_id, {"date": date, "timeline": []})
+        # Create DayPlan object to demonstrate object creation
+        created_dayplan = DayPlan(
+            date=date,
+            timeline=[]  # Initialize with empty timeline, ready for ItineraryItems
+        )
+        
+        # Add to database through service
+        service_resp = await TripService.add_dayplan(trip_id, created_dayplan.model_dump())
+        result = {"created_dayplan": created_dayplan.model_dump()}
+        result.update(service_resp or {})
+        return result
     # async def addDayPlan(self, new_date: str):
     #     self.dayPlans.append(DayPlan(date=new_date))
 
@@ -116,6 +130,90 @@ class Itinerary(BaseModel):
         pass
 
 
+# --- Booking Model ---
+class Booking(BaseModel):
+    bookingID: int
+    bookingType: str  # e.g., "flight", "hotel", "train", etc.
+    provider: str  # e.g., "Airline Name", "Hotel Name", etc.
+    bookingDate: str  # ISO date string "YYYY-MM-DD"
+    bookingReference: str
+    amount: float
+    status: str = "confirmed"  # "confirmed", "pending", "cancelled"
+    pdfData: Optional[str] = None  # Base64 encoded PDF
+    notes: Optional[str] = None
+
+    @classmethod
+    async def addBooking(cls, trip_id: str, booking_type: str, provider: str, 
+                        booking_date: str, booking_reference: str, amount: float,
+                        pdf_file: Optional[bytes] = None, notes: Optional[str] = None) -> Dict[str, Any]:
+        """Add a new booking with optional PDF attachment."""
+        try:
+            # Get existing bookings to determine next ID
+            bookings = await TripService.get_bookings(trip_id)
+            next_id = max((b.get("bookingID", 0) for b in bookings), default=0) + 1
+
+            # Create new booking object
+            booking = {
+                "bookingID": next_id,
+                "bookingType": booking_type,
+                "provider": provider,
+                "bookingDate": booking_date,
+                "bookingReference": booking_reference,
+                "amount": amount,
+                "status": "confirmed",
+                "notes": notes
+            }
+
+            # If PDF provided, encode and add to booking
+            if pdf_file:
+                booking["pdfData"] = base64.b64encode(pdf_file).decode('utf-8')
+
+            return await TripService.add_booking(trip_id, booking)
+        except Exception as e:
+            return {"error": f"Could not add booking: {str(e)}"}
+
+    @classmethod
+    async def getBookingPDF(cls, trip_id: str, booking_id: int) -> Optional[bytes]:
+        """Retrieve PDF data for a specific booking."""
+        booking = await TripService.get_booking(trip_id, booking_id)
+        if booking and booking.get("pdfData"):
+            try:
+                return base64.b64decode(booking["pdfData"])
+            except Exception:
+                return None
+        return None
+
+# --- Bookings Collection Model ---
+class Bookings(BaseModel):
+    bookings: List[Booking] = []
+    totalBookingAmount: float = 0.0
+
+    async def calculateTotalAmount(self):
+        """Calculate total amount of all confirmed bookings."""
+        self.totalBookingAmount = sum(
+            b.amount for b in self.bookings 
+            if b.status == "confirmed"
+        )
+        return self.totalBookingAmount
+
+    @classmethod
+    async def getBookings(cls, trip_id: str) -> Dict[str, Any]:
+        """Get all bookings for a trip."""
+        return await TripService.get_bookings(trip_id)
+
+    @classmethod
+    async def deleteBooking(cls, trip_id: str, booking_id: int) -> Dict[str, Any]:
+        """Delete a booking by ID."""
+        return await TripService.remove_booking(trip_id, booking_id)
+
+    @classmethod
+    async def updateBookingStatus(cls, trip_id: str, booking_id: int, 
+                                new_status: str) -> Dict[str, Any]:
+        """Update booking status."""
+        if new_status not in ["confirmed", "pending", "cancelled"]:
+            return {"error": "Invalid status"}
+        return await TripService.update_booking_status(trip_id, booking_id, new_status)
+
 # --- Top-level Model: Trip ---
 class Trip(BaseModel):
     # NOTE: tripID is a string (MongoDB _id as string). Diagram used int, but Mongo _id must be string here.
@@ -128,6 +226,7 @@ class Trip(BaseModel):
     budget: float
     totalCost: float = 0.0
     itinerary: Itinerary = Itinerary()
+    bookings: Bookings = Bookings()
 
     async def displayTripSummary(self):
         """
@@ -146,7 +245,7 @@ class Trip(BaseModel):
         return self.totalCost
 
     async def addItinerary(self, itinerary_data: Itinerary):
-        self.itinerary = itinerary_data
+        self.itinerary = Itinerary(**itinerary_data.model_dump())
 
     async def addBooking(self, booking_data: dict):
         # Placeholder for future booking integration
@@ -184,8 +283,14 @@ class Trip(BaseModel):
         Create this trip in DB. Model prepares the data and delegates to service.
         Service returns inserted_id (string); model sets tripID and userID.
         """
-        payload = self.dict()
+        # Create Itinerary object if not exists
+        if not self.itinerary:
+            self.itinerary = Itinerary(dayPlans=[])
+            
+        # Prepare payload with proper object creation
+        payload = self.model_dump()
         payload["userID"] = userID
+        
         # remove tripID if None so DB will create _id
         if payload.get("tripID") is None:
             payload.pop("tripID", None)

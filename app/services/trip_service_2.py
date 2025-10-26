@@ -65,6 +65,94 @@ class TripService:
 
 
     # -------------------------
+    # BOOKING HELPERS
+    # -------------------------
+    @staticmethod
+    async def get_bookings(trip_id: str) -> List[Dict[str, Any]]:
+        """Get all bookings for a trip."""
+        try:
+            trip = await database["trips"].find_one(
+                {"_id": ObjectId(trip_id)},
+                {"bookings.bookings": 1}
+            )
+            return trip.get("bookings", {}).get("bookings", []) if trip else []
+        except Exception:
+            return []
+
+    @staticmethod
+    async def get_booking(trip_id: str, booking_id: int) -> Optional[Dict[str, Any]]:
+        """Get a specific booking by ID."""
+        try:
+            trip = await database["trips"].find_one(
+                {
+                    "_id": ObjectId(trip_id),
+                    "bookings.bookings.bookingID": booking_id
+                },
+                {"bookings.bookings.$": 1}
+            )
+            if trip and trip.get("bookings", {}).get("bookings"):
+                return trip["bookings"]["bookings"][0]
+            return None
+        except Exception:
+            return None
+
+    @staticmethod
+    async def add_booking(trip_id: str, booking: Dict[str, Any]) -> Dict[str, Any]:
+        """Add a new booking to the trip."""
+        try:
+            # First ensure bookings array exists
+            await database["trips"].update_one(
+                {"_id": ObjectId(trip_id)},
+                {"$setOnInsert": {"bookings": {"bookings": [], "totalBookingAmount": 0.0}}}
+            )
+
+            # Add the booking
+            res = await database["trips"].update_one(
+                {"_id": ObjectId(trip_id)},
+                {
+                    "$push": {"bookings.bookings": booking},
+                    "$inc": {"bookings.totalBookingAmount": booking.get("amount", 0)}
+                }
+            )
+            return {"modified_count": getattr(res, "modified_count", 0)}
+        except Exception as e:
+            return {"error": str(e)}
+
+    @staticmethod
+    async def remove_booking(trip_id: str, booking_id: int) -> Dict[str, Any]:
+        """Remove a booking by ID."""
+        try:
+            # First get the booking to subtract its amount
+            booking = await TripService.get_booking(trip_id, booking_id)
+            if booking:
+                res = await database["trips"].update_one(
+                    {"_id": ObjectId(trip_id)},
+                    {
+                        "$pull": {"bookings.bookings": {"bookingID": booking_id}},
+                        "$inc": {"bookings.totalBookingAmount": -booking.get("amount", 0)}
+                    }
+                )
+                return {"modified_count": getattr(res, "modified_count", 0)}
+            return {"error": "Booking not found"}
+        except Exception as e:
+            return {"error": str(e)}
+
+    @staticmethod
+    async def update_booking_status(trip_id: str, booking_id: int, new_status: str) -> Dict[str, Any]:
+        """Update the status of a booking."""
+        try:
+            res = await database["trips"].update_one(
+                {
+                    "_id": ObjectId(trip_id),
+                    "bookings.bookings.bookingID": booking_id
+                },
+                {"$set": {"bookings.bookings.$.status": new_status}}
+            )
+            return {"modified_count": getattr(res, "modified_count", 0)}
+        except Exception as e:
+            return {"error": str(e)}
+
+    # -------------------------
     # ITINERARY / DAYPLAN / ITEM DB HELPERS (used by Trip model)
     # -------------------------
     @staticmethod
@@ -96,11 +184,37 @@ class TripService:
         Add a DayPlan object to itinerary.dayPlans.
         dayplan: {"date": "...", "timeline": [...]}
         """
-        res = await database["trips"].update_one(
-            {"_id": ObjectId(trip_id)},
-            {"$push": {"itinerary.dayPlans": dayplan}}
-        )
-        return {"modified_count": getattr(res, "modified_count", 0)}
+        try:
+            # First check if the trip exists and has an itinerary field
+            trip = await database["trips"].find_one({"_id": ObjectId(trip_id)})
+            if not trip:
+                return {"error": "Trip not found"}
+
+            # Initialize itinerary if it doesn't exist
+            if "itinerary" not in trip:
+                await database["trips"].update_one(
+                    {"_id": ObjectId(trip_id)},
+                    {"$set": {"itinerary": {"dayPlans": []}}}
+                )
+            
+            # Check if a dayplan with this date already exists
+            existing_dayplan = await database["trips"].find_one(
+                {
+                    "_id": ObjectId(trip_id),
+                    "itinerary.dayPlans.date": dayplan["date"]
+                }
+            )
+            if existing_dayplan:
+                return {"error": f"Day plan for date {dayplan['date']} already exists"}
+            
+            # Now add the dayplan
+            res = await database["trips"].update_one(
+                {"_id": ObjectId(trip_id)},
+                {"$push": {"itinerary.dayPlans": dayplan}}
+            )
+            return {"modified_count": getattr(res, "modified_count", 0)}
+        except Exception as e:
+            return {"error": f"Could not add day plan: {str(e)}"}
 
     @staticmethod
     async def remove_dayplan(trip_id: str, date: str) -> Dict[str, Any]:
