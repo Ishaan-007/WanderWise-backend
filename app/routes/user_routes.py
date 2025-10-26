@@ -47,3 +47,44 @@ async def get_communities():
     from app.models.user_models import GuestUser
     guest_user = GuestUser(userID="guest")
     return await guest_user.openCommunity()
+
+@router.get("/user/profile/{userID}")
+async def get_user_profile(userID: str):
+    """Get a user's profile details."""
+    result = await RegisteredUser.displayProfile(userID)
+    if not result["success"]:
+        raise HTTPException(status_code=404, detail=result["error"])
+    return result
+
+@router.put("/user/profile/{userID}/update")
+async def update_user_profile(
+    userID: str,
+    profilePictureURL: Optional[str] = Form(None),
+    location: Optional[str] = Form(None),
+    preference: Optional[str] = Form(None)
+):
+    """Update a user's profile details."""
+    # Build update data from provided fields
+    update_data = {}
+    if profilePictureURL:
+        update_data["profilePictureURL"] = profilePictureURL
+    if location:
+        update_data["location"] = location
+    if preference:
+        update_data["preference"] = preference
+
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No update data provided")
+
+    result = await RegisteredUser.updateProfile(userID, update_data)
+    if not result["success"]:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result
+
+@router.post("/user/{userID}/follow/{targetUserID}")
+async def follow_user(userID: str, targetUserID: str):
+    """Follow another user - requires both user IDs."""
+    result = await RegisteredUser.followUser(userID, targetUserID)
+    if not result["success"]:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result

@@ -74,8 +74,44 @@ class RegisteredUser(User):
     followerCount: int = 0
     followingCount: int = 0
 
-    async def updateProfile(self):
-        pass
+    @classmethod
+    async def displayProfile(cls, userID: str):
+        """Get user profile details from service."""
+        user = await UserService.get_user_by_id(userID)
+        if not user:
+            return {"success": False, "error": "User not found"}
+        return {
+            "success": True,
+            "profile": {
+                "userID": user.get("userID"),
+                "email": user.get("email"),
+                "profilePictureURL": user.get("profilePictureURL"),
+                "location": user.get("location"),
+                "preference": user.get("preference"),
+                "followerCount": user.get("followerCount", 0),
+                "followingCount": user.get("followingCount", 0)
+            }
+        }
+
+    @classmethod
+    async def updateProfile(cls, userID: str, update_data: dict):
+        """Update user profile using service."""
+        result = await UserService.update_user_by_id(userID, update_data)
+        if "error" in result:
+            return {"success": False, "error": result["error"]}
+        if result.get("modified_count", 0) > 0:
+            return {"success": True}
+        return {"success": False, "error": "No changes made"}
+
+    @classmethod
+    async def followUser(cls, userID: str, targetUserID: str):
+        """Follow another user using service."""
+        if userID == targetUserID:
+            return {"success": False, "error": "Cannot follow yourself"}
+        result = await UserService.follow_user(userID, targetUserID)
+        if "error" in result:
+            return {"success": False, "error": result["error"]}
+        return {"success": True}
 
     async def changePassword(self):
         pass
@@ -102,8 +138,23 @@ class RegisteredUser(User):
         from app.services.user_service import UserService
         return await UserService.get_all_communities()
 
-    async def displayProfileDetails(self):
-        pass
+    async def displayProfileDetails(self, userID: str):
+        """Get user profile details from service."""
+        user = await UserService.get_user_by_id(userID)
+        if not user:
+            return {"success": False, "error": "User not found"}
+        return {
+            "success": True,
+            "profile": {
+                "userID": user.get("userID"),
+                "email": user.get("email"),
+                "profilePictureURL": user.get("profilePictureURL"),
+                "location": user.get("location"),
+                "preference": user.get("preference"),
+                "followerCount": user.get("followerCount", 0),
+                "followingCount": user.get("followingCount", 0)
+            }
+        }
 
     async def follow(self):
         pass
