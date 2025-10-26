@@ -254,7 +254,7 @@ async def update_itinerary_item(
     return {"success": False, "error": result.get("error", "No changes made or item not found")}
 
 
-@router.delete("/trip/{tripID}/itinerary/item/delete")
+@router.post("/trip/{tripID}/itinerary/item/delete")
 async def delete_itinerary_item(
     tripID: str,
     date: str = Form(...),

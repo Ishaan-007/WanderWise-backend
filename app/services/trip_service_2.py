@@ -274,7 +274,51 @@ class TripService:
             return {"modified_count": 0, "created_dayplan": False}
         except Exception as e:
             return {"error": str(e)}
-        
+    
+    @staticmethod
+    async def remove_itinerary_item(trip_id: str, date: str, itemID: int) -> Dict[str, Any]:
+        """
+        Remove a specific itinerary item from a given day in a trip.
+        """
+        try:
+            # First, fetch the trip's dayPlans to find the item and its cost
+            trip = await database["trips"].find_one({"_id": ObjectId(trip_id)}, {"itinerary.dayPlans": 1})
+            if not trip:
+                return {"modified_count": 0, "error": "Trip not found"}
+
+            dayplans = trip.get("itinerary", {}).get("dayPlans", [])
+            day = next((d for d in dayplans if d.get("date") == date), None)
+            if not day:
+                return {"modified_count": 0, "error": "Day plan not found"}
+
+            item = next((it for it in day.get("timeline", []) if it.get("itemID") == itemID), None)
+            if not item:
+                return {"modified_count": 0, "error": "Item not found"}
+
+            # determine numeric cost to subtract from totalCost
+            try:
+                cost_to_subtract = float(item.get("cost", 0))
+            except Exception:
+                cost_to_subtract = 0.0
+
+            # Remove the item
+            result = await database["trips"].update_one(
+                {"_id": ObjectId(trip_id), "itinerary.dayPlans.date": date},
+                {"$pull": {"itinerary.dayPlans.$.timeline": {"itemID": itemID}}}
+            )
+
+            modified = getattr(result, "modified_count", 0)
+            if modified > 0 and cost_to_subtract != 0.0:
+                # decrement totalCost by the removed item's cost
+                await database["trips"].update_one({"_id": ObjectId(trip_id)}, {"$inc": {"totalCost": -cost_to_subtract}})
+                updated = await database["trips"].find_one({"_id": ObjectId(trip_id)}, {"totalCost": 1})
+                return {"modified_count": modified, "totalCost": updated.get("totalCost")}
+
+            return {"modified_count": modified}
+
+        except Exception as e:
+            return {"modified_count": 0, "error": str(e)}
+
     # @staticmethod
     # async def add_itinerary_item(trip_id: str, date: str, item: Dict[str, Any]) -> Dict[str, Any]:
     #     """
