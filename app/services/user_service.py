@@ -6,9 +6,16 @@ from datetime import datetime
 class UserService:
     @staticmethod
     async def register_user_service(user_data: dict):
-        existing = await database["users"].find_one({"email": user_data["email"]})
-        if existing:
+        # Check if email already exists
+        existing_email = await database["users"].find_one({"email": user_data["email"]})
+        if existing_email:
             return {"error": "Email already registered"}
+        
+        # Check if userName already exists
+        existing_username = await database["users"].find_one({"userName": user_data["userName"]})
+        if existing_username:
+            return {"error": "Username already taken"}
+        
         # Initialize follower and following counts
         user_data["followerCount"] = 0
         user_data["followingCount"] = 0

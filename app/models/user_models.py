@@ -15,6 +15,7 @@ class User(BaseModel):
         cls,
         email: EmailStr,
         password: str,
+        userName: str,
         profilePictureURL: Optional[str] = None,
         location: Optional[str] = None,
         preference: Optional[str] = None
@@ -22,6 +23,7 @@ class User(BaseModel):
         user_data = {
             "userRole": "Traveller",
             "email": email,
+            "userName": userName,
             "passwordHash": sha256(password.encode()).hexdigest(),
             "profilePictureURL": profilePictureURL,
             "location": location,
@@ -52,7 +54,10 @@ class User(BaseModel):
         if hashed_password != user_doc.get("passwordHash"):
             return {"success": False, "error": "Incorrect password"}
 
+        # Convert _id to userID and ensure userName exists
         user_doc["userID"] = str(user_doc["_id"])
+        if "userName" not in user_doc:
+            user_doc["userName"] = None  # Use None as default if userName is missing
         return {"success": True, "user": RegisteredUser(**user_doc).model_dump()}
         
 # ---------- Guest ----------
@@ -67,6 +72,7 @@ class GuestUser(User):
 # ---------- Registered User ----------
 class RegisteredUser(User):
     email: EmailStr
+    userName: Optional[str] = None  # Making userName optional to match parent class
     passwordHash: str
     profilePictureURL: Optional[str] = None
     location: Optional[str] = None
@@ -84,6 +90,7 @@ class RegisteredUser(User):
             "success": True,
             "profile": {
                 "userID": user.get("userID"),
+                "userName": user.get("userName"),
                 "email": user.get("email"),
                 "profilePictureURL": user.get("profilePictureURL"),
                 "location": user.get("location"),
@@ -147,6 +154,7 @@ class RegisteredUser(User):
             "success": True,
             "profile": {
                 "userID": user.get("userID"),
+                "userName": user.get("userName"),
                 "email": user.get("email"),
                 "profilePictureURL": user.get("profilePictureURL"),
                 "location": user.get("location"),

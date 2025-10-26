@@ -117,8 +117,26 @@ class Community(BaseModel):
             comm = await database["communities"].find_one({"_id": ObjectId(community_id)})
             if not comm:
                 return {"error": "Community not found"}
-            # Return posts as-is; the UI/route can filter or redact as needed for guests
-            return {"posts": comm.get("posts", [])}
+            
+            # Get posts with author names
+            posts = comm.get("posts", [])
+            enhanced_posts = []
+            
+            for post in posts:
+                post_copy = post.copy()
+                # Get author name if authorID exists
+                if post.get("authorID"):
+                    author = await database["users"].find_one({"_id": ObjectId(post["authorID"])})
+                    if author:
+                        post_copy["authorName"] = author.get("userName", "Unknown User")
+                    else:
+                        post_copy["authorName"] = "Unknown User"
+                else:
+                    post_copy["authorName"] = "Guest User"
+                
+                enhanced_posts.append(post_copy)
+            
+            return {"posts": enhanced_posts}
         except Exception as e:
             return {"error": str(e)}
 
@@ -132,6 +150,17 @@ class Community(BaseModel):
                 for p in comm.get("posts", []):
                     p_copy = p.copy()
                     p_copy["communityName"] = comm.get("name")
+                    
+                    # Get author name if authorID exists
+                    if p.get("authorID"):
+                        author = await database["users"].find_one({"_id": ObjectId(p["authorID"])})
+                        if author:
+                            p_copy["authorName"] = author.get("userName", "Unknown User")
+                        else:
+                            p_copy["authorName"] = "Unknown User"
+                    else:
+                        p_copy["authorName"] = "Guest User"
+                    
                     posts.append(p_copy)
         except Exception:
             pass

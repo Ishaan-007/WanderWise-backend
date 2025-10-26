@@ -71,11 +71,22 @@ async def view_trip_posts(communityID: str):
         if not community:
             raise HTTPException(status_code=404, detail="Community not found")
         
-        # Filter posts that contain trip data
+        # Filter posts that contain trip data and add author names
         trip_posts = []
         for post in community.get("posts", []):
             if "tripData" in post:
-                trip_posts.append(post)
+                post_copy = post.copy()
+                # Get author name if authorID exists
+                if post.get("authorID"):
+                    author = await database["users"].find_one({"_id": ObjectId(post["authorID"])})
+                    if author:
+                        post_copy["authorName"] = author.get("userName", "Unknown User")
+                    else:
+                        post_copy["authorName"] = "Unknown User"
+                else:
+                    post_copy["authorName"] = "Guest User"
+                
+                trip_posts.append(post_copy)
         
         return {
             "success": True, 

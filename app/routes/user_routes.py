@@ -10,11 +10,12 @@ router = APIRouter()
 async def register_user(
     email: str = Form(...),
     password: str = Form(...),
+    userName: str = Form(...),
     profilePictureURL: Optional[str] = Form(None),
     location: Optional[str] = Form(None),
     preference: Optional[str] = Form(None)
 ):
-    return await User.register(email, password, profilePictureURL, location, preference)
+    return await User.register(email, password, userName, profilePictureURL, location, preference)
 
 @router.post("/login")
 async def login_user(
@@ -59,6 +60,7 @@ async def get_user_profile(userID: str):
 @router.put("/user/profile/{userID}/update")
 async def update_user_profile(
     userID: str,
+    userName: Optional[str] = Form(None),
     profilePictureURL: Optional[str] = Form(None),
     location: Optional[str] = Form(None),
     preference: Optional[str] = Form(None)
@@ -66,6 +68,8 @@ async def update_user_profile(
     """Update a user's profile details."""
     # Build update data from provided fields
     update_data = {}
+    if userName:
+        update_data["userName"] = userName
     if profilePictureURL:
         update_data["profilePictureURL"] = profilePictureURL
     if location:
