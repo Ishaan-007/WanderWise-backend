@@ -104,6 +104,55 @@ class UserService:
             return {"success": True}
         except Exception as e:
             return {"error": str(e)}
+        
+    @staticmethod
+    async def unfollow_user(follower_id: str, target_id: str):
+        """User follower_id unfollows user target_id
+
+        Removes the follow record (if present) and decrements the
+        follower/following counters inside a transaction to keep counts consistent.
+        """
+        try:
+            # Check if both users exist
+            follower = await database["users"].find_one({"_id": ObjectId(follower_id)})
+            target = await database["users"].find_one({"_id": ObjectId(target_id)})
+            if not follower or not target:
+                return {"error": "One or both users not found"}
+
+            # Check if follow record exists
+            following = await database["follows"].find_one({
+                "followerID": follower_id,
+                "targetID": target_id
+            })
+            if not following:
+                return {"error": "Follow relationship not found"}
+
+            # Delete follow record and decrement counts atomically
+            async with await database.client.start_session() as session:
+                async with session.start_transaction():
+                    # Remove follow record
+                    del_res = await database["follows"].delete_one(
+                        {"_id": following.get("_id")}, session=session
+                    )
+
+                    # Decrement follower's following count (min 0)
+                    await database["users"].update_one(
+                        {"_id": ObjectId(follower_id)},
+                        {"$inc": {"followingCount": -1}},
+                        session=session
+                    )
+
+                    # Decrement target's follower count (min 0)
+                    await database["users"].update_one(
+                        {"_id": ObjectId(target_id)},
+                        {"$inc": {"followerCount": -1}},
+                        session=session
+                    )
+
+            return {"success": True}
+        except Exception as e:
+            return {"error": str(e)}
+
 
     @staticmethod
     async def get_all_communities():

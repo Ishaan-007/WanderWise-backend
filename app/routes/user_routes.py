@@ -68,13 +68,13 @@ async def update_user_profile(
     """Update a user's profile details."""
     # Build update data from provided fields
     update_data = {}
-    if userName:
+    if userName not in (None, "", "string"):
         update_data["userName"] = userName
-    if profilePictureURL:
+    if profilePictureURL not in (None, "", "string"):
         update_data["profilePictureURL"] = profilePictureURL
-    if location:
+    if location not in (None, "", "string"):
         update_data["location"] = location
-    if preference:
+    if preference not in (None, "", "string"):
         update_data["preference"] = preference
 
     if not update_data:
@@ -88,7 +88,16 @@ async def update_user_profile(
 @router.post("/user/{userID}/follow/{targetUserID}")
 async def follow_user(userID: str, targetUserID: str):
     """Follow another user - requires both user IDs."""
-    result = await RegisteredUser.followUser(userID, targetUserID)
+    result = await RegisteredUser.follow(userID, targetUserID)
+    if not result["success"]:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result
+
+
+@router.post("/user/{userID}/unfollow/{targetUserID}")
+async def unfollow_user(userID: str, targetUserID: str):
+    """Unfollow another user - requires both user IDs."""
+    result = await RegisteredUser.unfollow(userID, targetUserID)
     if not result["success"]:
         raise HTTPException(status_code=400, detail=result["error"])
     return result

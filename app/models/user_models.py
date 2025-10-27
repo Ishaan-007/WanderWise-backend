@@ -64,7 +64,6 @@ class User(BaseModel):
 class GuestUser(User):
     
     async def openCommunity(self):
-        """Return all community information for guest users"""
         from app.services.user_service import UserService
         return await UserService.get_all_communities()
 
@@ -72,7 +71,7 @@ class GuestUser(User):
 # ---------- Registered User ----------
 class RegisteredUser(User):
     email: EmailStr
-    userName: Optional[str] = None  # Making userName optional to match parent class
+    userName: Optional[str] = None
     passwordHash: str
     profilePictureURL: Optional[str] = None
     location: Optional[str] = None
@@ -82,7 +81,6 @@ class RegisteredUser(User):
 
     @classmethod
     async def displayProfile(cls, userID: str):
-        """Get user profile details from service."""
         user = await UserService.get_user_by_id(userID)
         if not user:
             return {"success": False, "error": "User not found"}
@@ -110,15 +108,7 @@ class RegisteredUser(User):
             return {"success": True}
         return {"success": False, "error": "No changes made"}
 
-    @classmethod
-    async def followUser(cls, userID: str, targetUserID: str):
-        """Follow another user using service."""
-        if userID == targetUserID:
-            return {"success": False, "error": "Cannot follow yourself"}
-        result = await UserService.follow_user(userID, targetUserID)
-        if "error" in result:
-            return {"success": False, "error": result["error"]}
-        return {"success": True}
+    
 
     async def changePassword(self):
         pass
@@ -164,11 +154,25 @@ class RegisteredUser(User):
             }
         }
 
-    async def follow(self):
-        pass
+    @classmethod
+    async def follow(cls, userID: str, targetUserID: str):
+        """Follow another user using service."""
+        if userID == targetUserID:
+            return {"success": False, "error": "Cannot follow yourself"}
+        result = await UserService.follow_user(userID, targetUserID)
+        if "error" in result:
+            return {"success": False, "error": result["error"]}
+        return {"success": True}
 
-    async def unfollow(self):
-        pass
+    @classmethod
+    async def unfollow(cls, userID: str, targetUserID: str):
+        """Unfollow a user using service."""
+        if userID == targetUserID:
+            return {"success": False, "error": "Cannot unfollow yourself"}
+        result = await UserService.unfollow_user(userID, targetUserID)
+        if "error" in result:
+            return {"success": False, "error": result["error"]}
+        return {"success": True}
 
 
 # ---------- Admin ----------

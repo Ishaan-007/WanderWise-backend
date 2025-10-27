@@ -1,4 +1,5 @@
 # app/models/trip_models.py
+from fastapi import File, Form, UploadFile
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from datetime import time, datetime
@@ -88,7 +89,6 @@ class DayPlan(BaseModel):
 
     @classmethod
     async def removeItem(cls, trip_id: str, date: str, itemID: int) -> Dict[str, Any]:
-        """Remove an itinerary item via service."""
         return await TripService.remove_itinerary_item(trip_id, date, itemID)
     # async def removeItem(self, itemID: int):
     #     self.timeline = [item for item in self.timeline if item.itemID != itemID]
@@ -100,7 +100,6 @@ class Itinerary(BaseModel):
 
     @classmethod
     async def addDayPlan(cls, trip_id: str, date: str) -> Dict[str, Any]:
-        """Add a day plan to a trip via service."""
         # Create DayPlan object to demonstrate object creation
         created_dayplan = DayPlan(
             date=date,
@@ -247,9 +246,35 @@ class Trip(BaseModel):
     async def addItinerary(self, itinerary_data: Itinerary):
         self.itinerary = Itinerary(**itinerary_data.model_dump())
 
-    async def addBooking(self, booking_data: dict):
-        # Placeholder for future booking integration
-        pass
+    async def addBooking(self, tripID: str,
+    bookingType: str,  # "flight", "hotel", etc.
+    provider: str,
+    bookingDate: str,  # "YYYY-MM-DD"
+    bookingReference: str,
+    amount: float,
+    notes: Optional[str],
+    pdfFile: Optional[UploadFile]):
+        try:
+            pdf_data = None
+            if pdfFile:
+                pdf_data = await pdfFile.read()
+
+            result = await Booking.addBooking(
+                trip_id=tripID,
+                booking_type=bookingType,
+                provider=provider,
+                booking_date=bookingDate,
+                booking_reference=bookingReference,
+                amount=amount,
+                pdf_file=pdf_data,
+                notes=notes
+            )
+            
+            if "error" in result:
+                return {"success": False, "error": result["error"]}
+            return {"success": True, "booking": result}
+        except Exception as e:
+            return {"success": False, "error": str(e)}
 
     async def shareTrip(self, community_id: str, author_id: str, title: str, content: str) -> Dict[str, Any]:
         """
