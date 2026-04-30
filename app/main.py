@@ -22,3 +22,7 @@ app.include_router(community_route.router, prefix="/api", tags=["Community"])
 @app.get("/")
 async def root():
     return {"message": "Welcome to WanderWise API"}
+
+@app.get("/version")
+def version():
+    return {"version": "v1"}
