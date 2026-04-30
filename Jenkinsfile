@@ -3,12 +3,6 @@ pipeline {
 
     stages {
 
-        stage('Clone') {
-            steps {
-                git 'https://github.com/Ishaan-007/WanderWise-backend'
-            }
-        }
-
         stage('Run Tests (pytest)') {
             agent {
                 docker {
