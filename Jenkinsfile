@@ -5,7 +5,7 @@ pipeline {
 
         stage('Clone') {
             steps {
-                git 'https://github.com/<your-username>/<your-repo>'
+                git 'https://github.com/Ishaan-007/WanderWise-backend'
             }
         }
 
