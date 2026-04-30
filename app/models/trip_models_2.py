@@ -124,9 +124,9 @@ class Itinerary(BaseModel):
     async def viewItinerary(self):
         return [plan.dict() for plan in self.dayPlans]
 
-    async def saveItinerary(self):
-        # Models should not directly access DB — Trip model will call the service when saving
-        pass
+    # async def saveItinerary(self):
+    #     # Models should not directly access DB — Trip model will call the service when saving
+    #     pass
 
 
 # --- Booking Model ---
