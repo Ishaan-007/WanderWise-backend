@@ -79,3 +79,7 @@ cython_debug/
 # Secrets / env files
 .env
 .env.*.local
+
+test_backend.py
+test_backend_2.py
+test_backend_3.py
