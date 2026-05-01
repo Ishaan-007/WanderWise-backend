@@ -24,6 +24,7 @@ pipeline {
                 -Dsonar.organization=ishaan-007 \
                 -Dsonar.sources=. \
                 -Dsonar.python.version=3.10
+                -Dsonar.scm.provider=git
                 '''
             }
         }
