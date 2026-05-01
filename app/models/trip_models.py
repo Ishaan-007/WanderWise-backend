@@ -33,7 +33,7 @@ class ItineraryItem(BaseModel):
 # --- Mid-level Model: DayPlan ---
 class DayPlan(BaseModel):
     date: str  # ISO date string: "YYYY-MM-DD"
-    timeline: List[ItineraryItem] = []
+    timeline: List["ItineraryItem"] = []
 
     async def addItineraryItem(self, startTime: str, endTime: str, cost: float, notes: Optional[str] = None):
         item = ItineraryItem(
@@ -54,7 +54,7 @@ class DayPlan(BaseModel):
 
 # --- Mid-level Model: Itinerary ---
 class Itinerary(BaseModel):
-    dayPlans: List[DayPlan] = []
+    dayPlans: List["DayPlan"] = []
 
     async def addDayPlan(self, new_date: str):
         self.dayPlans.append(DayPlan(date=new_date))
@@ -78,7 +78,7 @@ class Trip(BaseModel):
     endDate: str    # ISO date string
     budget: float
     totalCost: float = 0.0
-    itinerary: Itinerary = Itinerary()
+    itinerary: "Itinerary" = Itinerary()
 
     async def displayTripSummary(self):
         """
@@ -155,7 +155,7 @@ class Trip(BaseModel):
 # app/models/trip_models.py
 class TripDashboard(BaseModel):
     #userID: str
-    trips: List[Trip] = []
+    trips: List["Trip"] = []
 
     # @staticmethod
     # async def get_user_dashboard(userID: str):

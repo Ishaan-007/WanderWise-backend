@@ -1,8 +1,10 @@
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from fastapi import APIRouter, Form, HTTPException
-from app.models.user_models import User, RegisteredUser
 from app.database import database
 from bson import ObjectId
+
+if TYPE_CHECKING:
+    from app.models.user_models import User, RegisteredUser, GuestUser
 
 router = APIRouter()
 
@@ -15,6 +17,7 @@ async def register_user(
     location: Optional[str] = Form(None),
     preference: Optional[str] = Form(None)
 ):
+    from app.models.user_models import User
     return await User.register(email, password, userName, profilePictureURL, location, preference)
 
 @router.post("/login")
@@ -22,6 +25,7 @@ async def login_user(
     email: str = Form(...),
     password: str = Form(...)
 ):
+    from app.models.user_models import User
     result = await User.login(email, password)
     return result
     
@@ -38,6 +42,7 @@ async def get_users():
 
 @router.get("/dashboard/{userID}")
 async def open_dashboard(userID: str):
+    from app.models.user_models import RegisteredUser
     #user = RegisteredUser(userID=userID)  # Normally injected via auth
     dashboard = await RegisteredUser.openDashboard(userID)
     return dashboard
@@ -52,6 +57,7 @@ async def get_communities():
 @router.get("/user/profile/{userID}")
 async def get_user_profile(userID: str):
     """Get a user's profile details."""
+    from app.models.user_models import RegisteredUser
     result = await RegisteredUser.displayProfile(userID)
     if not result["success"]:
         raise HTTPException(status_code=404, detail=result["error"])
@@ -80,6 +86,7 @@ async def update_user_profile(
     if not update_data:
         raise HTTPException(status_code=400, detail="No update data provided")
 
+    from app.models.user_models import RegisteredUser
     result = await RegisteredUser.updateProfile(userID, update_data)
     if not result["success"]:
         raise HTTPException(status_code=400, detail=result["error"])
@@ -88,6 +95,7 @@ async def update_user_profile(
 @router.post("/user/{userID}/follow/{targetUserID}")
 async def follow_user(userID: str, targetUserID: str):
     """Follow another user - requires both user IDs."""
+    from app.models.user_models import RegisteredUser
     result = await RegisteredUser.follow(userID, targetUserID)
     if not result["success"]:
         raise HTTPException(status_code=400, detail=result["error"])
@@ -97,6 +105,7 @@ async def follow_user(userID: str, targetUserID: str):
 @router.post("/user/{userID}/unfollow/{targetUserID}")
 async def unfollow_user(userID: str, targetUserID: str):
     """Unfollow another user - requires both user IDs."""
+    from app.models.user_models import RegisteredUser
     result = await RegisteredUser.unfollow(userID, targetUserID)
     if not result["success"]:
         raise HTTPException(status_code=400, detail=result["error"])

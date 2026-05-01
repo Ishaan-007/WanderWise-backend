@@ -93,7 +93,7 @@ class Community(BaseModel):
     communityID: Optional[str] = None
     name: str
     description: Optional[str] = None
-    posts: List[Post] = []
+    posts: List["Post"] = []
 
     @classmethod
     async def create_community(cls, name: str, creator_id: Optional[str] = None, description: Optional[str] = None) -> Dict[str, Any]:
