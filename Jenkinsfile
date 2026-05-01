@@ -15,16 +15,15 @@ pipeline {
             steps {
                 sh '''
                 docker run --rm \
-                  -e SONAR_HOST_URL="https://sonarcloud.io" \
-                  -e SONAR_TOKEN="$SONAR_TOKEN" \
-                  -v "$PWD:/usr/src" \
-                  -v "$HOME/.sonar/cache:/opt/sonar-scanner/.sonar/cache" \
-                  -w /usr/src \
-                  sonarsource/sonar-scanner-cli \
-                  -Dsonar.projectKey=Ishaan-007_WanderWise-backend \
-                  -Dsonar.organization=Ishaan-007 \
-                  -Dsonar.sources=. \
-                  -Dsonar.python.version=3.10
+                -e SONAR_HOST_URL="https://sonarcloud.io" \
+                -e SONAR_TOKEN="$SONAR_TOKEN" \
+                -v "$PWD:/usr/src" \
+                -w /usr/src \
+                sonarsource/sonar-scanner-cli \
+                -Dsonar.projectKey=Ishaan-007_WanderWise-backend \
+                -Dsonar.organization=Ishaan-007 \
+                -Dsonar.sources=. \
+                -Dsonar.python.version=3.10
                 '''
             }
         }
