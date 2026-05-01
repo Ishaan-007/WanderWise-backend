@@ -2,33 +2,14 @@ pipeline {
     agent any
 
     stages {
+
         stage('Checkout Code') {
             steps {
                 checkout scm
             }
         }
 
-        stage('SonarCloud Analysis') {
-            environment {
-                SONAR_TOKEN = credentials('sonar-token')
-            }
-            steps {
-                sh '''
-                docker run --rm \
-                -e SONAR_HOST_URL="https://sonarcloud.io" \
-                -e SONAR_TOKEN="$SONAR_TOKEN" \
-                -v "$PWD:/usr/src" \
-                -w /usr/src \
-                sonarsource/sonar-scanner-cli \
-                -Dsonar.projectKey=Ishaan-007_WanderWise-backend \
-                -Dsonar.organization=ishaan-007 \
-                -Dsonar.sources=app \
-                -Dsonar.python.version=3.10 \
-                -Dsonar.scm.provider=git
-                '''
-            }
-        }
-
+        // ✅ RUN TESTS FIRST (generate coverage.xml)
         stage('Run Tests (pytest)') {
             agent {
                 docker {
@@ -37,17 +18,38 @@ pipeline {
             }
             steps {
                 sh '''
-                export PYTHONPATH=$PYTHONPATH:.
-
-                python -m venv venv
-                . venv/bin/activate
+                export PYTHONPATH=.
 
                 pip install --upgrade pip
                 pip install -r requirements.txt
-                pip install pytest
+                pip install pytest pytest-cov
 
-                pytest
+                pytest --cov=app --cov-report=xml
                 '''
+            }
+        }
+
+        // ✅ THEN SONARCLOUD (uses coverage.xml)
+        stage('SonarCloud Analysis') {
+            environment {
+                SONAR_TOKEN = credentials('sonar-token')
+            }
+            steps {
+                sh """
+                docker run --rm \
+                -e SONAR_HOST_URL=https://sonarcloud.io \
+                -e SONAR_TOKEN=${SONAR_TOKEN} \
+                -v \$PWD:/usr/src \
+                -w /usr/src \
+                sonarsource/sonar-scanner-cli \
+                -Dsonar.projectKey=Ishaan-007_WanderWise-backend \
+                -Dsonar.organization=ishaan-007 \
+                -Dsonar.sources=app \
+                -Dsonar.tests=tests \
+                -Dsonar.python.version=3.10 \
+                -Dsonar.scm.provider=git \
+                -Dsonar.python.coverage.reportPaths=coverage.xml
+                """
             }
         }
 
