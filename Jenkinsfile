@@ -27,7 +27,7 @@ pipeline {
                 pip install -r requirements.txt
                 pip install pytest pytest-cov
 
-                pytest --cov=app --cov-report=xml
+                pytest --cov=app --cov-report=xml tests
                 "
                 '''
             }
