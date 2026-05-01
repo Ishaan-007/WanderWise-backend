@@ -2,22 +2,30 @@ pipeline {
     agent any
 
     stages {
+        stage('Checkout Code') {
+            steps {
+                checkout scm
+            }
+        }
 
         stage('SonarCloud Analysis') {
             environment {
                 SONAR_TOKEN = credentials('sonar-token')
             }
             steps {
-                withSonarQubeEnv('SonarCloud') {
-                    sh '''
-                    /var/jenkins_home/tools/hudson.plugins.sonar.SonarRunnerInstallation/sonar-scanner/bin/sonar-scanner \
-                    -Dsonar.projectKey=Ishaan-007_WanderWise-backend \
-                    -Dsonar.organization=Ishaan-007 \
-                    -Dsonar.sources=. \
-                    -Dsonar.host.url=https://sonarcloud.io \
-                    -Dsonar.login=$SONAR_TOKEN
-                    '''
-                }
+                sh '''
+                docker run --rm \
+                  -e SONAR_HOST_URL="https://sonarcloud.io" \
+                  -e SONAR_TOKEN="$SONAR_TOKEN" \
+                  -v "$PWD:/usr/src" \
+                  -v "$HOME/.sonar/cache:/opt/sonar-scanner/.sonar/cache" \
+                  -w /usr/src \
+                  sonarsource/sonar-scanner-cli \
+                  -Dsonar.projectKey=Ishaan-007_WanderWise-backend \
+                  -Dsonar.organization=Ishaan-007 \
+                  -Dsonar.sources=. \
+                  -Dsonar.python.version=3.10
+                '''
             }
         }
 
