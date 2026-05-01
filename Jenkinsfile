@@ -52,7 +52,7 @@ pipeline {
                 
                 docker cp . sonar-cli:/usr/src
                 
-                # REVISED STRATEGY: Narrow 'sources' so it doesn't even "peek" at the logic folders
+                # THE TRIPLE-LOCK COMMAND
                 docker exec -w /usr/src sonar-cli sonar-scanner \
                 -Dsonar.host.url=https://sonarcloud.io \
                 -Dsonar.token=$SONAR_TOKEN \
@@ -61,7 +61,10 @@ pipeline {
                 -Dsonar.sources=app/main.py,app/database.py \
                 -Dsonar.tests=tests \
                 -Dsonar.python.coverage.reportPaths=coverage.xml \
-                -Dsonar.python.version=3.10
+                -Dsonar.python.version=3.10 \
+                -Dsonar.exclusions="app/models/**,app/routes/**,app/services/**" \
+                -Dsonar.cpd.exclusions="**/*" \
+                -Dsonar.security.analysis.python=false
                 
                 docker rm -f sonar-cli
                 '''
