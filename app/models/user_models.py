@@ -10,6 +10,25 @@ if TYPE_CHECKING:
 class User(BaseModel):
     userID: str
     userName: Optional[str] = None
+        
+# ---------- Guest ----------
+class GuestUser(User):
+    
+    async def openCommunity(self):
+        from app.services.user_service import UserService
+        return await UserService.get_all_communities()
+
+
+# ---------- Registered User ----------
+class RegisteredUser(User):
+    email: EmailStr
+    userName: Optional[str] = None
+    passwordHash: str
+    profilePictureURL: Optional[str] = None
+    location: Optional[str] = None
+    preference: Optional[str] = None
+    followerCount: int = 0
+    followingCount: int = 0
 
     @classmethod
     async def register(
@@ -41,7 +60,6 @@ class User(BaseModel):
         else:
             return {"success": False, "error": inserted.get("error")}
 
-
     @classmethod   
     async def login(
         cls,
@@ -62,25 +80,6 @@ class User(BaseModel):
         if "userName" not in user_doc:
             user_doc["userName"] = None  # Use None as default if userName is missing
         return {"success": True, "user": RegisteredUser(**user_doc).model_dump()}
-        
-# ---------- Guest ----------
-class GuestUser(User):
-    
-    async def openCommunity(self):
-        from app.services.user_service import UserService
-        return await UserService.get_all_communities()
-
-
-# ---------- Registered User ----------
-class RegisteredUser(User):
-    email: EmailStr
-    userName: Optional[str] = None
-    passwordHash: str
-    profilePictureURL: Optional[str] = None
-    location: Optional[str] = None
-    preference: Optional[str] = None
-    followerCount: int = 0
-    followingCount: int = 0
 
     @classmethod
     async def displayProfile(cls, userID: str):

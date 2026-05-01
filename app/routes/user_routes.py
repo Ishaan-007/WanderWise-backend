@@ -17,16 +17,16 @@ async def register_user(
     location: Optional[str] = Form(None),
     preference: Optional[str] = Form(None)
 ):
-    from app.models.user_models import User
-    return await User.register(email, password, userName, profilePictureURL, location, preference)
+    from app.models.user_models import RegisteredUser
+    return await RegisteredUser.register(email, password, userName, profilePictureURL, location, preference)
 
 @router.post("/login")
 async def login_user(
     email: str = Form(...),
     password: str = Form(...)
 ):
-    from app.models.user_models import User
-    result = await User.login(email, password)
+    from app.models.user_models import RegisteredUser
+    result = await RegisteredUser.login(email, password)
     return result
     
 def serialize_user(user_doc):
