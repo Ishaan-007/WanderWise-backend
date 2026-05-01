@@ -9,16 +9,15 @@ pipeline {
             }
         }
 
-        // ✅ RUN TESTS FIRST (with proper fix)
         stage('Run Tests (pytest)') {
-            agent {
-                docker {
-                    image 'python:3.10'
-                    args '-u root'
-                }
-            }
             steps {
                 sh '''
+                docker run --rm \
+                -u root \
+                -v "$PWD:/app" \
+                -w /app \
+                python:3.10 bash -c "
+
                 export PYTHONPATH=.
 
                 python -m venv venv
@@ -29,21 +28,21 @@ pipeline {
                 pip install pytest pytest-cov
 
                 pytest --cov=app --cov-report=xml
+                "
                 '''
             }
         }
 
-        // ✅ THEN SONARCLOUD
         stage('SonarCloud Analysis') {
             environment {
                 SONAR_TOKEN = credentials('sonar-token')
             }
             steps {
-                sh """
+                sh '''
                 docker run --rm \
                 -e SONAR_HOST_URL=https://sonarcloud.io \
-                -e SONAR_TOKEN=${SONAR_TOKEN} \
-                -v \$PWD:/usr/src \
+                -e SONAR_TOKEN=$SONAR_TOKEN \
+                -v "$PWD:/usr/src" \
                 -w /usr/src \
                 sonarsource/sonar-scanner-cli \
                 -Dsonar.projectKey=Ishaan-007_WanderWise-backend \
@@ -53,7 +52,7 @@ pipeline {
                 -Dsonar.python.version=3.10 \
                 -Dsonar.scm.provider=git \
                 -Dsonar.python.coverage.reportPaths=coverage.xml
-                """
+                '''
             }
         }
 
