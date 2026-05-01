@@ -20,11 +20,12 @@ pipeline {
                 sh '''
                 docker run --rm \
                 --entrypoint bash \
+                -u root \
                 -v "$PWD/tests:/app/tests" \
                 wanderwise-backend:latest -c "
                 
                 pip install pytest pytest-cov
-                pytest --cov=app --cov-report=xml /app/tests
+                python -m pytest --cov=app --cov-report=xml /app/tests
                 "
                 '''
             }
