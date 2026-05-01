@@ -43,16 +43,15 @@ pipeline {
                 docker run --rm \
                 -e SONAR_HOST_URL=https://sonarcloud.io \
                 -e SONAR_TOKEN=$SONAR_TOKEN \
-                -v "$PWD:/usr/src" \
-                -w /usr/src \
-                sonarsource/sonar-scanner-cli \
+                wanderwise-backend:latest \
+                bash -c "
+                sonar-scanner \
                 -Dsonar.projectKey=Ishaan-007_WanderWise-backend \
                 -Dsonar.organization=ishaan-007 \
                 -Dsonar.sources=app \
                 -Dsonar.tests=tests \
-                -Dsonar.python.version=3.10 \
-                -Dsonar.scm.provider=git \
                 -Dsonar.python.coverage.reportPaths=coverage.xml
+                "
                 '''
             }
         }
