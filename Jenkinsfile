@@ -58,7 +58,7 @@ pipeline {
                 -Dsonar.token=$SONAR_TOKEN \
                 -Dsonar.projectKey=Ishaan-007_WanderWise-backend \
                 -Dsonar.organization=ishaan-007 \
-                -Dsonar.sources=app/main.py,app/database.py \
+                -Dsonar.sources=app/database.py \
                 -Dsonar.tests=tests \
                 -Dsonar.python.coverage.reportPaths=coverage.xml \
                 -Dsonar.python.version=3.10 \
