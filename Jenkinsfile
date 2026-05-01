@@ -45,26 +45,27 @@ pipeline {
                 sh '''
                 rm -rf .scannerwork || true
                 docker rm -f sonar-cli || true
-                
-                docker run -d --name sonar-cli \
-                -e SONAR_SCANNER_OPTS="-Xmx3072m" \
-                --entrypoint sh sonarsource/sonar-scanner-cli -c "tail -f /dev/null"
-                
-                docker cp . sonar-cli:/usr/src
-                
-                # The '|| echo' hack: This forces the command to return success (0)
-                # even if the scanner crashes with an OutOfMemory error.
-                docker exec -w /usr/src sonar-cli sonar-scanner \
-                -Dsonar.host.url=https://sonarcloud.io \
-                -Dsonar.token=$SONAR_TOKEN \
-                -Dsonar.projectKey=Ishaan-007_WanderWise-backend \
-                -Dsonar.organization=ishaan-007 \
-                -Dsonar.sources=app/database.py \
-                -Dsonar.tests=tests \
-                -Dsonar.python.version=3.10 \
-                || echo "SonarScanner hit a memory limit, but skipping failure to continue deployment."
-                
-                docker rm -f sonar-cli
+
+                docker run --name sonar-cli \
+                    -e SONAR_SCANNER_OPTS="-Xmx2048m -Xms512m" \
+                    -v $(pwd):/usr/src \
+                    --workdir /usr/src \
+                    sonarsource/sonar-scanner-cli \
+                    sonar-scanner \
+                    -Dsonar.host.url=https://sonarcloud.io \
+                    -Dsonar.token=$SONAR_TOKEN \
+                    -Dsonar.projectKey=Ishaan-007_WanderWise-backend \
+                    -Dsonar.organization=ishaan-007 \
+                    -Dsonar.sources=app \
+                    -Dsonar.tests=tests \
+                    -Dsonar.python.version=3.10 \
+                    -Dsonar.python.xunit.reportPath=coverage.xml \
+                    -Dsonar.coverage.exclusions=tests/** \
+                    -Dsonar.cpd.exclusions=tests/** \
+                    -Dsonar.exclusions=**/__pycache__/**,**/*.pyc \
+                    -Dsonar.analysis.detectedscm=git
+
+                docker rm -f sonar-cli || true
                 '''
             }
         }
