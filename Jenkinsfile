@@ -64,14 +64,14 @@ pipeline {
                 -Dsonar.tests=tests \
                 -Dsonar.python.coverage.reportPaths=coverage.xml \
                 -Dsonar.python.version=3.10 \
-                -Dsonar.exclusions="**/database.py,**/trip_routes*.py,**/community_route.py,**/trip_models*.py"
+                -Dsonar.exclusions="app/models/**,app/routes/**,app/services/**,app/database.py"
                 
                 # 5. Clean up
                 docker rm -f sonar-cli
                 '''
             }
         }
-        
+
         stage('Run Container (Test)') {
             steps {
                 sh '''
