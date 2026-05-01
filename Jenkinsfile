@@ -14,22 +14,17 @@ pipeline {
                 sh '''
                 docker run --rm \
                 -u root \
-                -v "$PWD:/app" \
-                -w /app \
+                -v "$PWD:/workspace" \
+                -w /workspace \
                 python:3.10 bash -c "
 
-                export PYTHONPATH=.
-
-                python -m venv venv
-                . venv/bin/activate
+                export PYTHONPATH=/workspace
 
                 pip install --upgrade pip
-                if [ ! -f requirements.txt ]; then echo 'requirements.txt not found'; exit 1; fi
                 pip install -r requirements.txt
                 pip install pytest pytest-cov
 
-                if [ ! -d tests ]; then echo 'tests directory not found'; exit 1; fi
-                pytest --cov=app --cov-report=xml tests
+                pytest --cov=app --cov-report=xml tests/
                 "
                 '''
             }
