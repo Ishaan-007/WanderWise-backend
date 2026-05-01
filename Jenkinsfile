@@ -22,12 +22,13 @@ pipeline {
         stage('Run Tests (pytest)') {
             steps {
                 sh '''
+                # ADD THIS LINE: Clean up old containers first
+                docker rm -f test-run || true
+
                 docker run --name test-run \
                 wanderwise-backend:latest \
                 bash -c "
-
                 python -m pytest --cov=app --cov-report=xml tests/
-
                 "
 
                 docker cp test-run:/app/coverage.xml .
