@@ -21,7 +21,7 @@ pipeline {
                 -w /usr/src \
                 sonarsource/sonar-scanner-cli \
                 -Dsonar.projectKey=Ishaan-007_WanderWise-backend \
-                -Dsonar.organization=Ishaan-007 \
+                -Dsonar.organization=ishaan-007 \
                 -Dsonar.sources=. \
                 -Dsonar.python.version=3.10
                 '''
