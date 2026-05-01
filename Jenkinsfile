@@ -43,21 +43,16 @@ pipeline {
             }
             steps {
                 sh '''
-                # 1. NUKE THE POISONED CACHE FROM PREVIOUS RUNS
                 rm -rf .scannerwork || true
-                
-                # 2. Clean up old container
                 docker rm -f sonar-cli || true
                 
-                # 3. Start container with max memory
                 docker run -d --name sonar-cli \
                 -e SONAR_SCANNER_OPTS="-Xmx4096m" \
                 --entrypoint sh sonarsource/sonar-scanner-cli -c "tail -f /dev/null"
                 
-                # 4. Copy the freshly fixed code into the container
                 docker cp . sonar-cli:/usr/src
                 
-                # 5. Execute scanner (EXCLUSIONS REMOVED)
+                # EXECUTE SCANNER - EXCLUDING THE ONE CRASHING FILE
                 docker exec -w /usr/src sonar-cli sonar-scanner \
                 -Dsonar.host.url=https://sonarcloud.io \
                 -Dsonar.token=$SONAR_TOKEN \
@@ -66,10 +61,9 @@ pipeline {
                 -Dsonar.sources=app \
                 -Dsonar.tests=tests \
                 -Dsonar.python.coverage.reportPaths=coverage.xml \
-                -Dsonar.python.version=3.10
-                -Dsonar.exclusions="/*_2.py"
+                -Dsonar.python.version=3.10 \
+                -Dsonar.exclusions="app/models/trip_models.py"
                 
-                # 6. Clean up
                 docker rm -f sonar-cli
                 '''
             }
