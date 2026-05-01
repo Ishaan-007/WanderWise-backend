@@ -59,11 +59,25 @@ pipeline {
             }
         }
 
-        stage('Run Container (Test)') {
+        stage('Run Tests (pytest)') {
+            agent {
+                docker {
+                    image 'python:3.10'
+                    args '-u root'   // 🔥 important fix
+                }
+            }
             steps {
                 sh '''
-                docker rm -f test-container || true
-                docker run -d -p 8000:8000 --name test-container wanderwise-backend
+                export PYTHONPATH=.
+
+                python -m venv venv
+                . venv/bin/activate
+
+                pip install --upgrade pip
+                pip install -r requirements.txt
+                pip install pytest pytest-cov
+
+                pytest --cov=app --cov-report=xml
                 '''
             }
         }
