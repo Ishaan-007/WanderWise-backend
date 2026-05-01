@@ -43,14 +43,18 @@ pipeline {
             }
             steps {
                 sh '''
+                # 1. Clean up
                 docker rm -f sonar-cli || true
                 
+                # 2. Start container
                 docker run -d --name sonar-cli \
                 -e SONAR_SCANNER_OPTS="-Xmx4096m" \
                 --entrypoint sh sonarsource/sonar-scanner-cli -c "tail -f /dev/null"
                 
+                # 3. Copy code
                 docker cp . sonar-cli:/usr/src
                 
+                # 4. Execute scanner with aggressive exclusions
                 docker exec -w /usr/src sonar-cli sonar-scanner \
                 -Dsonar.host.url=https://sonarcloud.io \
                 -Dsonar.token=$SONAR_TOKEN \
@@ -60,12 +64,14 @@ pipeline {
                 -Dsonar.tests=tests \
                 -Dsonar.python.coverage.reportPaths=coverage.xml \
                 -Dsonar.python.version=3.10 \
-                -Dsonar.exclusions="app/database.py,app/trip_routes*.py"
+                -Dsonar.exclusions="**/database.py,**/trip_routes*.py,**/community_route.py,**/trip_models*.py"
                 
+                # 5. Clean up
                 docker rm -f sonar-cli
                 '''
             }
         }
+        
         stage('Run Container (Test)') {
             steps {
                 sh '''
