@@ -3,6 +3,22 @@ pipeline {
 
     stages {
 
+        stage('SonarCloud Analysis') {
+            environment {
+                SONAR_TOKEN = credentials('sonar-token')
+            }
+            steps {
+                sh '''
+                sonar-scanner \
+                -Dsonar.organization=Ishaan-007 \
+                -Dsonar.projectKey=WanderWise-backend \
+                -Dsonar.sources=. \
+                -Dsonar.host.url=https://sonarcloud.io \
+                -Dsonar.login=$SONAR_TOKEN
+                '''
+            }
+        }
+
         stage('Run Tests (pytest)') {
             agent {
                 docker {
