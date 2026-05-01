@@ -1,7 +1,17 @@
 pipeline {
     agent any
 
+    tools {
+        sonarScanner 'sonar-scanner'   // 👈 link Jenkins-installed scanner
+    }
+
     stages {
+
+        stage('Checkout Code') {
+            steps {
+                checkout scm
+            }
+        }
 
         stage('SonarCloud Analysis') {
             environment {
@@ -28,14 +38,14 @@ pipeline {
             steps {
                 sh '''
                 export PYTHONPATH=$PYTHONPATH:.
-                
+
                 python -m venv venv
                 . venv/bin/activate
-                
+
                 pip install --upgrade pip
                 pip install -r requirements.txt
                 pip install pytest
-                
+
                 pytest
                 '''
             }
