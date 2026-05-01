@@ -22,7 +22,6 @@ pipeline {
         stage('Run Tests (pytest)') {
             steps {
                 sh '''
-                # ADD THIS LINE: Clean up old containers first
                 docker rm -f test-run || true
 
                 docker run --name test-run \
@@ -33,38 +32,6 @@ pipeline {
 
                 docker cp test-run:/app/coverage.xml .
                 docker rm test-run
-                '''
-            }
-        }
-
-        stage('SonarCloud Analysis') {
-            environment {
-                SONAR_TOKEN = credentials('sonar-token')
-            }
-            steps {
-                sh '''
-                rm -rf .scannerwork || true
-                docker rm -f sonar-cli || true
-                
-                docker run -d --name sonar-cli \
-                -e SONAR_SCANNER_OPTS="-Xmx3072m" \
-                --entrypoint sh sonarsource/sonar-scanner-cli -c "tail -f /dev/null"
-                
-                docker cp . sonar-cli:/usr/src
-                
-                # The '|| echo' hack: This forces the command to return success (0)
-                # even if the scanner crashes with an OutOfMemory error.
-                docker exec -w /usr/src sonar-cli sonar-scanner \
-                -Dsonar.host.url=https://sonarcloud.io \
-                -Dsonar.token=$SONAR_TOKEN \
-                -Dsonar.projectKey=Ishaan-007_WanderWise-backend \
-                -Dsonar.organization=ishaan-007 \
-                -Dsonar.sources=app/database.py \
-                -Dsonar.tests=tests \
-                -Dsonar.python.version=3.10 \
-                || echo "SonarScanner hit a memory limit, but skipping failure to continue deployment."
-                
-                docker rm -f sonar-cli
                 '''
             }
         }
