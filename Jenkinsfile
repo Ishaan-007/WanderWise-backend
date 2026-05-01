@@ -46,7 +46,7 @@ pipeline {
                 # 1. Clean up any leftover container
                 docker rm -f sonar-cli || true
                 
-                # 2. Start the container with 4GB of RAM allocated to the JVM
+                # 2. Start the container with the 4GB memory limit
                 docker run -d --name sonar-cli \
                 -e SONAR_SCANNER_OPTS="-Xmx4096m" \
                 --entrypoint sh sonarsource/sonar-scanner-cli -c "tail -f /dev/null"
@@ -54,7 +54,7 @@ pipeline {
                 # 3. Copy the code into the container
                 docker cp . sonar-cli:/usr/src
                 
-                # 4. Execute the scanner
+                # 4. Execute the scanner WITH THE PYTHON VERSION FIX
                 docker exec -w /usr/src sonar-cli sonar-scanner \
                 -Dsonar.host.url=https://sonarcloud.io \
                 -Dsonar.token=$SONAR_TOKEN \
@@ -62,7 +62,8 @@ pipeline {
                 -Dsonar.organization=ishaan-007 \
                 -Dsonar.sources=app \
                 -Dsonar.tests=tests \
-                -Dsonar.python.coverage.reportPaths=coverage.xml
+                -Dsonar.python.coverage.reportPaths=coverage.xml \
+                -Dsonar.python.version=3.10
                 
                 # 5. Clean up
                 docker rm -f sonar-cli
