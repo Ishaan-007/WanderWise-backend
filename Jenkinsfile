@@ -23,7 +23,7 @@ pipeline {
                 -Dsonar.projectKey=Ishaan-007_WanderWise-backend \
                 -Dsonar.organization=ishaan-007 \
                 -Dsonar.sources=. \
-                -Dsonar.python.version=3.10
+                -Dsonar.python.version=3.10 \
                 -Dsonar.scm.provider=git
                 '''
             }
