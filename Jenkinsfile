@@ -24,9 +24,11 @@ pipeline {
                 . venv/bin/activate
 
                 pip install --upgrade pip
+                if [ ! -f requirements.txt ]; then echo 'requirements.txt not found'; exit 1; fi
                 pip install -r requirements.txt
                 pip install pytest pytest-cov
 
+                if [ ! -d tests ]; then echo 'tests directory not found'; exit 1; fi
                 pytest --cov=app --cov-report=xml tests
                 "
                 '''
