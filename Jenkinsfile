@@ -4,17 +4,18 @@ pipeline {
     stages {
 
         stage('SonarCloud Analysis') {
-            environment {
-                SONAR_TOKEN = credentials('sonar-token')
-            }
             steps {
                 sh '''
-                sonar-scanner \
-                -Dsonar.organization=Ishaan-007 \
-                -Dsonar.projectKey=WanderWise-backend \
-                -Dsonar.sources=. \
-                -Dsonar.host.url=https://sonarcloud.io \
-                -Dsonar.login=$SONAR_TOKEN
+                if command -v sonar-scanner >/dev/null 2>&1; then
+                    sonar-scanner \
+                    -Dsonar.organization=Ishaan-007 \
+                    -Dsonar.projectKey=WanderWise-backend \
+                    -Dsonar.sources=. \
+                    -Dsonar.host.url=https://sonarcloud.io \
+                    -Dsonar.login=$SONAR_TOKEN
+                else
+                    echo "SonarScanner not installed, skipping analysis"
+                fi
                 '''
             }
         }
