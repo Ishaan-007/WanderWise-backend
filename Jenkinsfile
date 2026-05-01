@@ -22,7 +22,7 @@ pipeline {
                 sonarsource/sonar-scanner-cli \
                 -Dsonar.projectKey=Ishaan-007_WanderWise-backend \
                 -Dsonar.organization=ishaan-007 \
-                -Dsonar.sources=.app \
+                -Dsonar.sources=.app/ \
                 -Dsonar.python.version=3.10 \
                 -Dsonar.scm.provider=git
                 '''
