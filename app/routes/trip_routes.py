@@ -1,8 +1,10 @@
 # app/routes/trip_routes.py
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from fastapi import APIRouter, Form, HTTPException
-from app.models.trip_models import Trip, TripDashboard
-from app.services.trip_service import TripService
+
+if TYPE_CHECKING:
+    from app.models.trip_models import Trip, TripDashboard
+    from app.services.trip_service import TripService
 
 router = APIRouter()
 
@@ -24,6 +26,7 @@ async def create_trip(
     endDate: str = Form(...),
     budget: float = Form(...)
 ):
+    from app.models.trip_models import TripDashboard
     dashboard = TripDashboard()
     # await dashboard.display_trips()  # load existing trips for the user
     result = await dashboard.createTrip(userID, name, destination, startDate, endDate, budget)
@@ -38,6 +41,7 @@ async def create_trip(
 
 @router.get("/trip/{tripID}")
 async def get_trip(tripID: str, userID: str):
+    from app.services.trip_service import TripService
     # Use model->service path: TripService provides summary, model can wrap it
     summary = await TripService.get_trip_summary_from_db(userID, tripID)
     if "error" in summary:
@@ -52,6 +56,7 @@ async def update_trip(
     destination: Optional[str] = Form(None),
     budget: Optional[float] = Form(None)
 ):
+    from app.services.trip_service import TripService
     update_data = {}
 
     if name not in (None, "", "string"):
@@ -76,6 +81,7 @@ async def update_trip(
 
 @router.delete("/trip/delete/{tripID}")
 async def delete_trip(userID: str, tripID: str):
+    from app.models.trip_models import TripDashboard
     dashboard = TripDashboard(userID=userID)
     #await dashboard.loadTripsFromDB()
     return await dashboard.deleteTrip(tripID)

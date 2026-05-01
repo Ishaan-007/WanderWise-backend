@@ -1,9 +1,10 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from hashlib import sha256
-from app.models.trip_models import TripDashboard
-#from app.services.trip_service import TripService
-from app.services.user_service import UserService
+
+if TYPE_CHECKING:
+    from app.models.trip_models import TripDashboard
+    from app.services.user_service import UserService
 
 # ---------- Base User ----------
 class User(BaseModel):
@@ -20,6 +21,7 @@ class User(BaseModel):
         location: Optional[str] = None,
         preference: Optional[str] = None
     ):
+        from app.services.user_service import UserService
         user_data = {
             "userRole": "Traveller",
             "email": email,
@@ -46,6 +48,7 @@ class User(BaseModel):
         email: EmailStr,
         password: str
     ):
+        from app.services.user_service import UserService
         user_doc = await UserService.get_user_by_email(email)
         if not user_doc:
             return {"success": False, "error": "Email not registered"}
@@ -81,6 +84,7 @@ class RegisteredUser(User):
 
     @classmethod
     async def displayProfile(cls, userID: str):
+        from app.services.user_service import UserService
         user = await UserService.get_user_by_id(userID)
         if not user:
             return {"success": False, "error": "User not found"}
@@ -101,6 +105,7 @@ class RegisteredUser(User):
     @classmethod
     async def updateProfile(cls, userID: str, update_data: dict):
         """Update user profile using service."""
+        from app.services.user_service import UserService
         result = await UserService.update_user_by_id(userID, update_data)
         if "error" in result:
             return {"success": False, "error": result["error"]}
@@ -119,6 +124,7 @@ class RegisteredUser(User):
         Create a TripDashboard instance for this user, load trips from DB and return the dashboard.
         Route code expects a model (so caller can call .model_dump()).
         """
+        from app.models.trip_models import TripDashboard
         #dashboard = TripDashboard(userID=userID)
         dashboard = await TripDashboard.display_trips(userID)
         return dashboard
@@ -137,6 +143,7 @@ class RegisteredUser(User):
 
     async def displayProfileDetails(self, userID: str):
         """Get user profile details from service."""
+        from app.services.user_service import UserService
         user = await UserService.get_user_by_id(userID)
         if not user:
             return {"success": False, "error": "User not found"}
@@ -157,6 +164,7 @@ class RegisteredUser(User):
     @classmethod
     async def follow(cls, userID: str, targetUserID: str):
         """Follow another user using service."""
+        from app.services.user_service import UserService
         if userID == targetUserID:
             return {"success": False, "error": "Cannot follow yourself"}
         result = await UserService.follow_user(userID, targetUserID)
@@ -167,6 +175,7 @@ class RegisteredUser(User):
     @classmethod
     async def unfollow(cls, userID: str, targetUserID: str):
         """Unfollow a user using service."""
+        from app.services.user_service import UserService
         if userID == targetUserID:
             return {"success": False, "error": "Cannot unfollow yourself"}
         result = await UserService.unfollow_user(userID, targetUserID)

@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Form, HTTPException
-from typing import Optional
-from app.models.community_models import Community, Post
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models.community_models import Community, Post
 
 router = APIRouter()
 
@@ -12,6 +14,7 @@ async def create_community(
     description: Optional[str] = Form(None)
 ):
     """Create a community. userID (creator) must be provided."""
+    from app.models.community_models import Community
     result = await Community.create_community(name=name, creator_id=userID, description=description)
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
@@ -27,6 +30,7 @@ async def publish_post(
     contentType: Optional[str] = Form("text")
 ):
     """Publish a post in a community. Only registered users should have userID."""
+    from app.models.community_models import Community
     result = await Community.publish_post(communityID, userID, title, content, contentType)
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
@@ -36,6 +40,7 @@ async def publish_post(
 @router.get("/community/{communityID}/posts")
 async def view_posts(communityID: str):
     """View posts in a community (visible to guests)."""
+    from app.models.community_models import Community
     result = await Community.view_posts(communityID)
     if "error" in result:
         raise HTTPException(status_code=404, detail=result["error"])
@@ -50,6 +55,7 @@ async def add_comment(
     text: str = Form(...)
 ):
     """Add a comment to a post. userID required (registered user)."""
+    from app.models.community_models import Post
     result = await Post.add_comment(communityID, postID, userID, text)
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])
@@ -100,6 +106,7 @@ async def view_trip_posts(communityID: str):
 @router.post("/community/{communityID}/post/{postID}/like")
 async def like_post(communityID: str, postID: int):
     """Like a post. Increments the like count."""
+    from app.models.community_models import Post
     result = await Post.add_like(communityID, postID)
     if "error" in result:
         raise HTTPException(status_code=400, detail=result["error"])

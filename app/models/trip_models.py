@@ -1,8 +1,10 @@
 # app/models/trip_models.py
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 from datetime import time
-from app.services.trip_service import TripService
+
+if TYPE_CHECKING:
+    from app.services.trip_service import TripService
 
 # --- Leaf Model: ItineraryItem ---
 class ItineraryItem(BaseModel):
@@ -82,6 +84,7 @@ class Trip(BaseModel):
         """
         Return a summary for this trip (fresh from db) — model calls service.
         """
+        from app.services.trip_service import TripService
         if not self.tripID or not self.userID:
             return {"error": "tripID and userID required"}
         return await TripService.get_trip_summary_from_db(self.userID, self.tripID)
@@ -121,6 +124,7 @@ class Trip(BaseModel):
         """
         Model method that calls service to fetch trips for a user, then returns Trip instances.
         """
+        from app.services.trip_service import TripService
         trips = await TripService.get_trips_by_user(userID)
         return [Trip(**t) for t in trips]
 
@@ -129,6 +133,7 @@ class Trip(BaseModel):
         Create this trip in DB. Model prepares the data and delegates to service.
         Service returns inserted_id (string); model sets tripID and userID.
         """
+        from app.services.trip_service import TripService
         payload = self.dict()
         payload["userID"] = userID
         # remove tripID if None so DB will create _id
@@ -158,6 +163,7 @@ class TripDashboard(BaseModel):
         
     async def createTrip(self, userID: str, name: str, destination: str, startDate: str, endDate: str, budget: float):
         # Create trip object
+        from app.services.trip_service import TripService
         new_trip = Trip(
             userID=userID,
             name=name,
@@ -179,10 +185,12 @@ class TripDashboard(BaseModel):
     
     @staticmethod
     async def display_trips(userID: str):
+        from app.services.trip_service import TripService
         trips_data = await TripService.get_trips_by_user(userID)
         return [Trip(**t) for t in trips_data]
 
     async def deleteTrip(self, tripID: str):
+        from app.services.trip_service import TripService
         deleted = await TripService.delete_trip(tripID)
         if deleted:
             self.trips = [trip for trip in self.trips if trip.tripID != tripID]
