@@ -1,10 +1,6 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
 from hashlib import sha256
-
-if TYPE_CHECKING:
-    from app.models.trip_models import TripDashboard
-    from app.services.user_service import UserService
 
 # ---------- Base User ----------
 class User(BaseModel):

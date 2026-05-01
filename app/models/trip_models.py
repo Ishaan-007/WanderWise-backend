@@ -1,10 +1,7 @@
 # app/models/trip_models.py
 from pydantic import BaseModel
-from typing import List, Optional, TYPE_CHECKING
+from typing import List, Optional
 from datetime import time
-
-if TYPE_CHECKING:
-    from app.services.trip_service import TripService
 
 # --- Leaf Model: ItineraryItem ---
 class ItineraryItem(BaseModel):

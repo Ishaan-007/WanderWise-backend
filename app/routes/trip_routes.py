@@ -1,10 +1,6 @@
 # app/routes/trip_routes.py
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
 from fastapi import APIRouter, Form, HTTPException
-
-if TYPE_CHECKING:
-    from app.models.trip_models import Trip, TripDashboard
-    from app.services.trip_service import TripService
 
 router = APIRouter()
 

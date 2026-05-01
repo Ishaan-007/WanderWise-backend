@@ -1,10 +1,7 @@
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
 from fastapi import APIRouter, Form, HTTPException
 from app.database import database
 from bson import ObjectId
-
-if TYPE_CHECKING:
-    from app.models.user_models import User, RegisteredUser, GuestUser
 
 router = APIRouter()
 
