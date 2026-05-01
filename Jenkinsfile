@@ -12,19 +12,45 @@ pipeline {
         stage('Run Tests (pytest)') {
             steps {
                 sh '''
+                echo "=== Current directory on host ==="
+                pwd
+                echo "=== Files in current directory on host ==="
+                ls -la
+                
                 docker run --rm \
                 -u root \
                 -v "$PWD:/workspace" \
                 -w /workspace \
                 python:3.10 bash -c "
 
+                echo '=== Inside Docker Container ==='
+                echo 'Current working directory:'
+                pwd
+                echo 'Contents of /workspace:'
+                ls -la /workspace
+                
                 export PYTHONPATH=/workspace
 
                 pip install --upgrade pip
-                pip install -r requirements.txt
+                
+                if [ -f /workspace/requirements.txt ]; then
+                    echo 'Found requirements.txt'
+                    pip install -r /workspace/requirements.txt
+                else
+                    echo 'requirements.txt not found in /workspace'
+                    ls -la /workspace/
+                    exit 1
+                fi
+                
                 pip install pytest pytest-cov
 
-                pytest --cov=app --cov-report=xml tests/
+                if [ -d /workspace/tests ]; then
+                    echo 'Found tests directory'
+                    pytest --cov=app --cov-report=xml /workspace/tests
+                else
+                    echo 'tests directory not found'
+                    exit 1
+                fi
                 "
                 '''
             }
