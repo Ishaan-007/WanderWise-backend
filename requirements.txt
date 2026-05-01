@@ -5,3 +5,4 @@ motor
 python-dotenv
 pydantic
 python-multipart
+httpx>=0.24.0
