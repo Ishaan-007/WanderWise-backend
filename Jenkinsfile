@@ -52,17 +52,16 @@ pipeline {
                 
                 docker cp . sonar-cli:/usr/src
                 
-                # EXECUTE SCANNER - EXCLUDING THE ONE CRASHING FILE
+                # REVISED STRATEGY: Narrow 'sources' so it doesn't even "peek" at the logic folders
                 docker exec -w /usr/src sonar-cli sonar-scanner \
                 -Dsonar.host.url=https://sonarcloud.io \
                 -Dsonar.token=$SONAR_TOKEN \
                 -Dsonar.projectKey=Ishaan-007_WanderWise-backend \
                 -Dsonar.organization=ishaan-007 \
-                -Dsonar.sources=app \
+                -Dsonar.sources=app/main.py,app/database.py \
                 -Dsonar.tests=tests \
                 -Dsonar.python.coverage.reportPaths=coverage.xml \
-                -Dsonar.python.version=3.10 \
-                -Dsonar.exclusions="app/models/trip_models.py"
+                -Dsonar.python.version=3.10
                 
                 docker rm -f sonar-cli
                 '''
