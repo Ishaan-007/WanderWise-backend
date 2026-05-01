@@ -19,22 +19,16 @@ pipeline {
             steps {
                 sh '''
                 docker run --rm \
-                --entrypoint bash \
-                -u root \
-                -v "$PWD:/app" \
-                -w /app \
-                wanderwise-backend:latest -c "
-                
-                echo '=== Contents of /app ==='
-                ls -la /app
-                
-                echo '=== Installing pytest and pytest-cov ==='
+                wanderwise-backend:latest \
+                bash -c "
+
+                echo '=== Inside container ==='
+                ls -la
+
                 pip install pytest pytest-cov
-                
-                echo '=== Running pytest with verbose output ==='
-                python -m pytest -v --tb=short --cov=app --cov-report=xml tests/
-                
-                echo '=== Test execution completed ==='
+
+                pytest -v --tb=short --cov=app --cov-report=xml tests/
+
                 "
                 '''
             }
