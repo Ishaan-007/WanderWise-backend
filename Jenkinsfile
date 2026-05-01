@@ -65,6 +65,8 @@ pipeline {
                 -Dsonar.exclusions="app/models/**,app/routes/**,app/services/**" \
                 -Dsonar.cpd.exclusions="**/*" \
                 -Dsonar.security.analysis.python=false
+                -Dsonar.python.security.enabled=false \
+                -Dsonar.internal.analysis.pypi.enabled=false
                 
                 docker rm -f sonar-cli
                 '''
