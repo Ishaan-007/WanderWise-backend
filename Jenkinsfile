@@ -1,31 +1,23 @@
 pipeline {
     agent any
 
-    tools {
-        sonar 'sonar-scanner'   // 👈 link Jenkins-installed scanner
-    }
-
     stages {
-
-        stage('Checkout Code') {
-            steps {
-                checkout scm
-            }
-        }
 
         stage('SonarCloud Analysis') {
             environment {
                 SONAR_TOKEN = credentials('sonar-token')
             }
             steps {
-                sh '''
-                sonar-scanner \
-                -Dsonar.projectKey=Ishaan-007_WanderWise-backend \
-                -Dsonar.organization=Ishaan-007 \
-                -Dsonar.sources=. \
-                -Dsonar.host.url=https://sonarcloud.io \
-                -Dsonar.login=$SONAR_TOKEN
-                '''
+                withSonarQubeEnv('SonarCloud') {
+                    sh '''
+                    /var/jenkins_home/tools/hudson.plugins.sonar.SonarRunnerInstallation/sonar-scanner/bin/sonar-scanner \
+                    -Dsonar.projectKey=Ishaan-007_WanderWise-backend \
+                    -Dsonar.organization=Ishaan-007 \
+                    -Dsonar.sources=. \
+                    -Dsonar.host.url=https://sonarcloud.io \
+                    -Dsonar.login=$SONAR_TOKEN
+                    '''
+                }
             }
         }
 
