@@ -27,7 +27,7 @@ pipeline {
 
                 pip install pytest pytest-cov
 
-                pytest -v --tb=short --cov=app --cov-report=xml tests/
+                python -m pytest -v --tb=short --cov=app --cov-report=xml tests/
 
                 "
                 '''
