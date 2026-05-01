@@ -38,17 +38,27 @@ pipeline {
             }
             steps {
                 sh '''
-                docker run --rm \
-                -e SONAR_HOST_URL=https://sonarcloud.io \
-                -e SONAR_TOKEN=$SONAR_TOKEN \
-                -v "$PWD:/usr/src" \
-                -w /usr/src \
-                sonarsource/sonar-scanner-cli \
+                # 1. Clean up any leftover container from previous failed runs
+                docker rm -f sonar-cli || true
+                
+                # 2. Start the SonarScanner container in the background, keeping it alive
+                docker run -d --name sonar-cli --entrypoint sh sonarsource/sonar-scanner-cli -c "tail -f /dev/null"
+                
+                # 3. Copy the entire Jenkins workspace (code + coverage.xml) into the container
+                docker cp . sonar-cli:/usr/src
+                
+                # 4. Execute the scanner inside the container
+                docker exec -w /usr/src sonar-cli sonar-scanner \
+                -Dsonar.host.url=https://sonarcloud.io \
+                -Dsonar.token=$SONAR_TOKEN \
                 -Dsonar.projectKey=Ishaan-007_WanderWise-backend \
                 -Dsonar.organization=ishaan-007 \
                 -Dsonar.sources=app \
                 -Dsonar.tests=tests \
                 -Dsonar.python.coverage.reportPaths=coverage.xml
+                
+                # 5. Clean up the container
+                docker rm -f sonar-cli
                 '''
             }
         }
