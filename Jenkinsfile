@@ -9,16 +9,20 @@ pipeline {
             }
         }
 
-        // ✅ RUN TESTS FIRST (generate coverage.xml)
+        // ✅ RUN TESTS FIRST (with proper fix)
         stage('Run Tests (pytest)') {
             agent {
                 docker {
                     image 'python:3.10'
+                    args '-u root'
                 }
             }
             steps {
                 sh '''
                 export PYTHONPATH=.
+
+                python -m venv venv
+                . venv/bin/activate
 
                 pip install --upgrade pip
                 pip install -r requirements.txt
@@ -29,7 +33,7 @@ pipeline {
             }
         }
 
-        // ✅ THEN SONARCLOUD (uses coverage.xml)
+        // ✅ THEN SONARCLOUD
         stage('SonarCloud Analysis') {
             environment {
                 SONAR_TOKEN = credentials('sonar-token')
@@ -59,25 +63,11 @@ pipeline {
             }
         }
 
-        stage('Run Tests (pytest)') {
-            agent {
-                docker {
-                    image 'python:3.10'
-                    args '-u root'   // 🔥 important fix
-                }
-            }
+        stage('Run Container (Test)') {
             steps {
                 sh '''
-                export PYTHONPATH=.
-
-                python -m venv venv
-                . venv/bin/activate
-
-                pip install --upgrade pip
-                pip install -r requirements.txt
-                pip install pytest pytest-cov
-
-                pytest --cov=app --cov-report=xml
+                docker rm -f test-container || true
+                docker run -d -p 8000:8000 --name test-container wanderwise-backend
                 '''
             }
         }
