@@ -42,18 +42,18 @@ pipeline {
             }
             steps {
                 sh '''
-                # 1. Clean up any leftover container from previous failed runs
+                # 1. Clean up any leftover container
                 docker rm -f sonar-cli || true
                 
-                # 2. Start the SonarScanner container in the background with INCREASED MEMORY
+                # 2. Start the container with 4GB of RAM allocated to the JVM
                 docker run -d --name sonar-cli \
-                -e SONAR_SCANNER_OPTS="-Xmx2048m" \
+                -e SONAR_SCANNER_OPTS="-Xmx4096m" \
                 --entrypoint sh sonarsource/sonar-scanner-cli -c "tail -f /dev/null"
                 
-                # 3. Copy the entire Jenkins workspace (code + coverage.xml) into the container
+                # 3. Copy the code into the container
                 docker cp . sonar-cli:/usr/src
                 
-                # 4. Execute the scanner inside the container
+                # 4. Execute the scanner
                 docker exec -w /usr/src sonar-cli sonar-scanner \
                 -Dsonar.host.url=https://sonarcloud.io \
                 -Dsonar.token=$SONAR_TOKEN \
@@ -63,7 +63,7 @@ pipeline {
                 -Dsonar.tests=tests \
                 -Dsonar.python.coverage.reportPaths=coverage.xml
                 
-                # 5. Clean up the container
+                # 5. Clean up
                 docker rm -f sonar-cli
                 '''
             }
