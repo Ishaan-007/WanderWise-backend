@@ -18,18 +18,16 @@ pipeline {
         stage('Run Tests (pytest)') {
             steps {
                 sh '''
-                docker run --rm \
+                docker run --name test-run \
                 wanderwise-backend:latest \
                 bash -c "
 
-                echo '=== Inside container ==='
-                ls -la
-
-                pip install pytest pytest-cov
-
-                python -m pytest -v --tb=short --cov=app --cov-report=xml tests/
+                python -m pytest --cov=app --cov-report=xml tests/
 
                 "
+
+                docker cp test-run:/app/coverage.xml .
+                docker rm test-run
                 '''
             }
         }
