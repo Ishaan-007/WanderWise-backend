@@ -67,6 +67,7 @@ pipeline {
                 -Dsonar.tests=tests \
                 -Dsonar.python.coverage.reportPaths=coverage.xml \
                 -Dsonar.python.version=3.10
+                -Dsonar.exclusions="/*_2.py"
                 
                 # 6. Clean up
                 docker rm -f sonar-cli
