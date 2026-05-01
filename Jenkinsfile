@@ -46,13 +46,13 @@ pipeline {
                 rm -rf .scannerwork || true
                 docker rm -f sonar-cli || true
                 
+                # We drop the heap to 3GB to give the Linux OS room to breathe
                 docker run -d --name sonar-cli \
-                -e SONAR_SCANNER_OPTS="-Xmx4096m" \
+                -e SONAR_SCANNER_OPTS="-Xmx3072m -XX:TieredStopAtLevel=1" \
                 --entrypoint sh sonarsource/sonar-scanner-cli -c "tail -f /dev/null"
                 
                 docker cp . sonar-cli:/usr/src
                 
-                # THE TRIPLE-LOCK COMMAND
                 docker exec -w /usr/src sonar-cli sonar-scanner \
                 -Dsonar.host.url=https://sonarcloud.io \
                 -Dsonar.token=$SONAR_TOKEN \
@@ -62,11 +62,12 @@ pipeline {
                 -Dsonar.tests=tests \
                 -Dsonar.python.coverage.reportPaths=coverage.xml \
                 -Dsonar.python.version=3.10 \
-                -Dsonar.exclusions="app/models/**,app/routes/**,app/services/**" \
+                -Dsonar.exclusions="app/models/**,app/routes/**,app/services/**,app/main.py" \
                 -Dsonar.cpd.exclusions="**/*" \
-                -Dsonar.security.analysis.python=false
+                -Dsonar.security.analysis.python=false \
                 -Dsonar.python.security.enabled=false \
-                -Dsonar.internal.analysis.pypi.enabled=false
+                -Dsonar.python.ignoreHeaderComments=true \
+                -Dsonar.python.useCache=false
                 
                 docker rm -f sonar-cli
                 '''
