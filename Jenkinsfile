@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        sonarRunner 'sonar-scanner'   // 👈 link Jenkins-installed scanner
+        sonar 'sonar-scanner'   // 👈 link Jenkins-installed scanner
     }
 
     stages {
