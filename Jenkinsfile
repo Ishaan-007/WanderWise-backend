@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    triggers {
+        githubPush()
+    }
+
     stages {
 
         stage('Checkout Code') {
@@ -41,8 +45,10 @@ pipeline {
                 # 1. Clean up any leftover container from previous failed runs
                 docker rm -f sonar-cli || true
                 
-                # 2. Start the SonarScanner container in the background, keeping it alive
-                docker run -d --name sonar-cli --entrypoint sh sonarsource/sonar-scanner-cli -c "tail -f /dev/null"
+                # 2. Start the SonarScanner container in the background with INCREASED MEMORY
+                docker run -d --name sonar-cli \
+                -e SONAR_SCANNER_OPTS="-Xmx2048m" \
+                --entrypoint sh sonarsource/sonar-scanner-cli -c "tail -f /dev/null"
                 
                 # 3. Copy the entire Jenkins workspace (code + coverage.xml) into the container
                 docker cp . sonar-cli:/usr/src
