@@ -24,7 +24,9 @@ pipeline {
                 sh '''
                 docker rm -f test-run || true
 
+                # Notice the added -e MONGO_URI flag with a dummy localhost connection!
                 docker run --name test-run \
+                -e MONGO_URI="mongodb://localhost:27017/test_database" \
                 wanderwise-backend:latest \
                 bash -c "
                 python -m pytest --cov=app --cov-report=xml tests/
