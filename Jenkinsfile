@@ -37,13 +37,15 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_KEY')]) {
                     sh """
-                    echo "--- Nuking Windows properties file to fix CRLF corruption ---"
+                    echo "--- Cleaning up old files and containers ---"
                     rm -f sonar-project.properties || true
+                    docker rm -f sonar-scan || true
                     
-                    echo "--- Starting SonarScanner ---"
-                    docker run --rm \
+                    echo "--- Bypassing Docker-in-Docker Bug via Copy ---"
+                    # 1. CREATE the container (but don't start it yet)
+                    docker create --name sonar-scan \
                     --network host \
-                    -v \$(pwd):/usr/src \
+                    -w /usr/src \
                     -e SONAR_SCANNER_OPTS="-Xmx512m" \
                     sonarsource/sonar-scanner-cli \
                     -Dsonar.projectKey=Wanderwise-Backend \
@@ -53,6 +55,15 @@ pipeline {
                     -Dsonar.python.coverage.reportPaths=coverage.xml \
                     -Dsonar.scm.disabled=true \
                     -Dsonar.python.version=3
+
+                    # 2. COPY the actual code from Jenkins into the scanner container
+                    docker cp . sonar-scan:/usr/src/
+
+                    # 3. RUN the scanner
+                    docker start -a sonar-scan
+
+                    # 4. Cleanup
+                    docker rm -f sonar-scan
                     """
                 }
             }
