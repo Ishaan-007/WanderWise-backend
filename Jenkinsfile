@@ -42,8 +42,8 @@ pipeline {
                     docker rm -f sonar-scan || true
                     
                     echo "--- Fixing XML Coverage Paths ---"
-                    sed -i 's|/app/|/usr/src/|g' coverage.xml
-                    sed -i 's|<source>/app</source>|<source>/usr/src</source>|g' coverage.xml
+                    # Precision fix: Force the XML to point to the exact app folder in the scanner
+                    sed -i 's|<source>.*</source>|<source>/usr/src/app</source>|g' coverage.xml
                     
                     echo "--- Bypassing Docker-in-Docker Bug via Copy ---"
                     docker create --name sonar-scan \
