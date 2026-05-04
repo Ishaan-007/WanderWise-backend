@@ -38,6 +38,22 @@ pipeline {
             }
         }
 
+        stage('Static Code Analysis') {
+            steps {
+                withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_KEY')]) {
+                    sh """
+                    docker run --rm \
+                    -v \$(pwd):/usr/src \
+                    sonarsource/sonar-scanner-cli \
+                    -Dsonar.projectKey=Wanderwise-Backend \
+                    -Dsonar.sources=. \
+                    -Dsonar.host.url=https://cascade-comic-shoplift.ngrok-free.dev \
+                    -Dsonar.login=${SONAR_KEY}
+                    """
+                }
+            }
+        }
+
         stage('Deploy Observability Stack') {
             steps {
                 // We wrap the deployment steps in this block to securely grab the secret
@@ -80,12 +96,15 @@ EOF
                     docker cp prometheus_temp.yml prometheus:/etc/prometheus/prometheus.yml
                     docker restart prometheus
 
-                    # 5. Start Grafana
+                    # 5. Start Grafana (Now with persistent storage!)
+                    docker volume create grafana-storage || true
                     docker rm -f grafana || true
+                    
                     docker run -d \
                       --name grafana \
                       --network wanderwise-net \
                       -p 3000:3000 \
+                      -v grafana-storage:/var/lib/grafana \
                       grafana/grafana
                     '''
                 }
