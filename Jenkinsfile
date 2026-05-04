@@ -12,24 +12,6 @@ pipeline {
             }
         }
 
-        // --- DIAGNOSTIC STAGE START ---
-        stage('Debug Workspace') {
-            steps {
-                echo "--- CURRENT WORKING DIRECTORY ---"
-                sh 'pwd'
-                
-                echo "--- TOP LEVEL STRUCTURE ---"
-                sh 'ls -F'
-                
-                echo "--- CHECKING IF 'app' FOLDER EXISTS ---"
-                sh '[ -d "app" ] && echo "Folder app found" || echo "Folder app NOT found"'
-                
-                echo "--- 2-LEVEL DEEP STRUCTURE (Ignoring hidden files) ---"
-                sh 'find . -maxdepth 2 -not -path "*/.*"'
-            }
-        }
-        // --- DIAGNOSTIC STAGE END ---
-
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t wanderwise-backend:latest .'
@@ -44,6 +26,8 @@ pipeline {
                 -e MONGO_URI="mongodb://localhost:27017/test_database" \
                 wanderwise-backend:latest \
                 bash -c "python -m pytest --cov=app --cov-report=xml tests/"
+                
+                # Move the coverage report to the root so Sonar can see it
                 docker cp test-run:/app/coverage.xml .
                 docker rm test-run
                 '''
@@ -54,17 +38,22 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_KEY')]) {
                     sh """
+                    # 1. Create a clean properties file
+                    echo "sonar.projectKey=Wanderwise-Backend" > sonar-project.properties
+                    echo "sonar.sources=app" >> sonar-project.properties
+                    echo "sonar.host.url=https://cascade-comic-shoplift.ngrok-free.dev" >> sonar-project.properties
+                    echo "sonar.login=${SONAR_KEY}" >> sonar-project.properties
+                    echo "sonar.python.version=3" >> sonar-project.properties
+                    echo "sonar.scm.disabled=true" >> sonar-project.properties
+                    
+                    # 2. Link your Pytest results to SonarQube
+                    echo "sonar.python.coverage.reportPaths=coverage.xml" >> sonar-project.properties
+
+                    # 3. Run the scanner using the properties file instead of long flags
                     docker run --rm \
                     -v \$(pwd):/usr/src \
                     -e SONAR_SCANNER_OPTS="-Xmx512m" \
-                    sonarsource/sonar-scanner-cli \
-                    -Dsonar.projectKey=Wanderwise-Backend \
-                    -Dsonar.sources=. \
-                    -Dsonar.inclusions=app/**/*,app/*.py \
-                    -Dsonar.exclusions=env/**,venv/**,tests/**,**/__pycache__/**,*.xml,*.yml \
-                    -Dsonar.host.url=https://cascade-comic-shoplift.ngrok-free.dev \
-                    -Dsonar.login=${SONAR_KEY} \
-                    -Dsonar.scm.disabled=true
+                    sonarsource/sonar-scanner-cli
                     """
                 }
             }
