@@ -46,8 +46,9 @@ pipeline {
                     -v \$(pwd):/usr/src \
                     sonarsource/sonar-scanner-cli \
                     -Dsonar.projectKey=Wanderwise-Backend \
-                    -Dsonar.sources=app \
-                    -Dsonar.exclusions=**/__pycache__/** \
+                    -Dsonar.sources=. \
+                    -Dsonar.inclusions=app/** \
+                    -Dsonar.exclusions=venv/**,tests/**,**/__pycache__/**,*.xml \
                     -Dsonar.host.url=https://cascade-comic-shoplift.ngrok-free.dev \
                     -Dsonar.login=${SONAR_KEY}
                     """
