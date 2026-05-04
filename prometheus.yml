@@ -1,0 +1,8 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'wanderwise-backend'
+    static_configs:
+      # This hostname will match the Docker container name we set in Jenkins
+      - targets: ['wanderwise-app:8000']

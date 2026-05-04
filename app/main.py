@@ -20,6 +20,8 @@ def create_app() -> FastAPI:
     app.include_router(trip_routes.router, prefix="/api", tags=["Trips"])
     app.include_router(community_route.router, prefix="/api", tags=["Community"])
 
+    Instrumentator().instrument(app).expose(app)
+
     @app.get("/")
     async def root():
         return {"message": "Welcome to WanderWise API"}

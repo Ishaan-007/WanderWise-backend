@@ -8,3 +8,4 @@ python-multipart
 httpx>=0.24.0
 pytest
 pytest-cov
+prometheus-fastapi-instrumentator
