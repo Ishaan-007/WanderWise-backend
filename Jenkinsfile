@@ -41,8 +41,11 @@ pipeline {
                     rm -f sonar-project.properties || true
                     docker rm -f sonar-scan || true
                     
+                    echo "--- Fixing XML Coverage Paths ---"
+                    sed -i 's|/app/|/usr/src/|g' coverage.xml
+                    sed -i 's|<source>/app</source>|<source>/usr/src</source>|g' coverage.xml
+                    
                     echo "--- Bypassing Docker-in-Docker Bug via Copy ---"
-                    # 1. CREATE the container (but don't start it yet)
                     docker create --name sonar-scan \
                     --network host \
                     -w /usr/src \
@@ -56,13 +59,8 @@ pipeline {
                     -Dsonar.scm.disabled=true \
                     -Dsonar.python.version=3
 
-                    # 2. COPY the actual code from Jenkins into the scanner container
                     docker cp . sonar-scan:/usr/src/
-
-                    # 3. RUN the scanner
                     docker start -a sonar-scan
-
-                    # 4. Cleanup
                     docker rm -f sonar-scan
                     """
                 }
