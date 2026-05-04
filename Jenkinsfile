@@ -52,8 +52,7 @@ pipeline {
                     sonarsource/sonar-scanner-cli \
                     -Dsonar.projectKey=Wanderwise-Backend \
                     -Dsonar.sources=. \
-                    -Dsonar.inclusions=app/**/*.py,app/*.py \
-                    -Dsonar.exclusions=tests/**,env/**,venv/**,**/__pycache__/**,*.xml \
+                    -Dsonar.exclusions=tests/**,env/**,venv/**,**/__pycache__/**,*.xml,prometheus_temp.yml \
                     -Dsonar.host.url=http://localhost:9000 \
                     -Dsonar.login=${SONAR_KEY} \
                     -Dsonar.python.coverage.reportPaths=coverage.xml \
