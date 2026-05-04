@@ -44,15 +44,16 @@ pipeline {
                     echo "--- Cleaning up sonar-project.properties ---"
                     sed -i '/sonar.login/d' sonar-project.properties || true
                     
-                    echo "--- Starting SonarScanner via SSH Tunnel ---"
-                    # --network host is REQUIRED to see the localhost:9000 tunnel
+                    echo "--- Starting SonarScanner ---"
                     docker run --rm \
                     --network host \
                     -v \$(pwd):/usr/src \
                     -e SONAR_SCANNER_OPTS="-Xmx512m" \
                     sonarsource/sonar-scanner-cli \
                     -Dsonar.projectKey=Wanderwise-Backend \
-                    -Dsonar.sources=app \
+                    -Dsonar.sources=. \
+                    -Dsonar.inclusions=app/**/*.py,app/*.py \
+                    -Dsonar.exclusions=tests/**,env/**,venv/**,**/__pycache__/**,*.xml \
                     -Dsonar.host.url=http://localhost:9000 \
                     -Dsonar.login=${SONAR_KEY} \
                     -Dsonar.python.coverage.reportPaths=coverage.xml \
