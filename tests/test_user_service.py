@@ -250,11 +250,15 @@ class TestUserServiceFollow:
                     return mock_follows
             
             mock_db.__getitem__.side_effect = mock_getitem
-            mock_db.client.start_session.return_value.__aenter__.return_value.start_transaction.return_value.__aenter__.return_value = AsyncMock()
+            mock_session = AsyncMock()
+            mock_session.start_transaction.return_value.__aenter__.return_value = None
+            mock_session.__aenter__.return_value = mock_session
+            mock_db.client.start_session = AsyncMock(return_value=mock_session)
             
             result = await UserService.follow_user(follower_id, target_id)
             
-            assert result["success"] is True
+            assert "error" not in result, f"Expected success, got: {result.get('error')}"
+            assert result.get("success") is True
 
     @pytest.mark.asyncio
     async def test_follow_user_not_found(self):
@@ -318,11 +322,15 @@ class TestUserServiceFollow:
                     return mock_follows
             
             mock_db.__getitem__.side_effect = mock_getitem
-            mock_db.client.start_session.return_value.__aenter__.return_value.start_transaction.return_value.__aenter__.return_value = AsyncMock()
+            mock_session = AsyncMock()
+            mock_session.start_transaction.return_value.__aenter__.return_value = None
+            mock_session.__aenter__.return_value = mock_session
+            mock_db.client.start_session = AsyncMock(return_value=mock_session)
             
             result = await UserService.unfollow_user(follower_id, target_id)
             
-            assert result["success"] is True
+            assert "error" not in result, f"Expected success, got: {result.get('error')}"
+            assert result.get("success") is True
 
     @pytest.mark.asyncio
     async def test_unfollow_follow_relationship_not_found(self, sample_registered_user):

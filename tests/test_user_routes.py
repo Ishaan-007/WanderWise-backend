@@ -158,12 +158,10 @@ class TestGetUsersRoute:
         with patch("app.routes.user_routes.database") as mock_db:
             mock_users = AsyncMock()
             
-            async def async_iter():
-                yield sample_registered_user
+            mock_cursor = MagicMock()
+            mock_cursor.to_list = AsyncMock(return_value=[sample_registered_user])
+            mock_users.find = MagicMock(return_value=mock_cursor)
             
-            mock_users.find.return_value.to_list = AsyncMock(
-                return_value=[sample_registered_user]
-            )
             mock_db.__getitem__.return_value = mock_users
             
             response = client.get("/api/users")
@@ -175,7 +173,9 @@ class TestGetUsersRoute:
         """Test retrieving users when none exist."""
         with patch("app.routes.user_routes.database") as mock_db:
             mock_users = AsyncMock()
-            mock_users.find.return_value.to_list = AsyncMock(return_value=[])
+            mock_cursor = MagicMock()
+            mock_cursor.to_list = AsyncMock(return_value=[])
+            mock_users.find = MagicMock(return_value=mock_cursor)
             mock_db.__getitem__.return_value = mock_users
             
             response = client.get("/api/users")

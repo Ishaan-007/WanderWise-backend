@@ -205,10 +205,13 @@ class TestUpdateTripRoute:
         """Test update with no valid fields provided."""
         trip_id = "507f1f77bcf86cd799439011"
         
-        response = client.put(
-            f"/api/trip/update/{trip_id}",
-            data={}
-        )
+        with patch("app.services.trip_service.TripService.update_trip") as mock_update:
+            mock_update.return_value = MagicMock(modified_count=0)
+            
+            response = client.put(
+                f"/api/trip/update/{trip_id}",
+                data={}
+            )
         
         assert response.status_code == 200
         assert response.json()["success"] is False
@@ -217,13 +220,16 @@ class TestUpdateTripRoute:
         """Test update ignores placeholder string values."""
         trip_id = "507f1f77bcf86cd799439011"
         
-        response = client.put(
-            f"/api/trip/update/{trip_id}",
-            data={
-                "name": "string",  # Placeholder value, should be ignored
-                "destination": "New Destination"
-            }
-        )
+        with patch("app.services.trip_service.TripService.update_trip") as mock_update:
+            mock_update.return_value = MagicMock(modified_count=1)
+            
+            response = client.put(
+                f"/api/trip/update/{trip_id}",
+                data={
+                    "name": "string",  # Placeholder value, should be ignored
+                    "destination": "New Destination"
+                }
+            )
         
         assert response.status_code == 200
 

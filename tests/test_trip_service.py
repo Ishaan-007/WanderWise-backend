@@ -96,7 +96,7 @@ class TestTripServiceGetTrip:
             async def async_iter():
                 yield sample_trip_document
             
-            mock_trips.find.return_value = async_iter()
+            mock_trips.find = MagicMock(return_value=async_iter())
             mock_db.__getitem__.return_value = mock_trips
             
             result = await TripService.get_trips_by_user(user_id)
@@ -116,7 +116,7 @@ class TestTripServiceGetTrip:
                 return
                 yield  # Empty generator
             
-            mock_trips.find.return_value = async_iter()
+            mock_trips.find = MagicMock(return_value=async_iter())
             mock_db.__getitem__.return_value = mock_trips
             
             result = await TripService.get_trips_by_user(user_id)

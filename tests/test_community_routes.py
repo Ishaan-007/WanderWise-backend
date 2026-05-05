@@ -406,7 +406,7 @@ class TestViewTripPostsRoute:
             "tripData": {"destination": "Paris"}
         }
         
-        with patch("app.routes.community_route.database") as mock_db:
+        with patch("app.database.database") as mock_db:
             mock_communities = AsyncMock()
             mock_communities.find_one.return_value = {
                 "_id": ObjectId(community_id),
@@ -426,7 +426,7 @@ class TestViewTripPostsRoute:
         """Test viewing trip posts when none exist."""
         community_id = str(ObjectId())
         
-        with patch("app.routes.community_route.database") as mock_db:
+        with patch("app.database.database") as mock_db:
             mock_communities = AsyncMock()
             mock_communities.find_one.return_value = {
                 "_id": ObjectId(community_id),
@@ -445,7 +445,7 @@ class TestViewTripPostsRoute:
         """Test viewing trip posts for non-existent community."""
         community_id = str(ObjectId())
         
-        with patch("app.routes.community_route.database") as mock_db:
+        with patch("app.database.database") as mock_db:
             mock_communities = AsyncMock()
             mock_communities.find_one.return_value = None
             
@@ -464,7 +464,7 @@ class TestViewTripPostsRoute:
             {"postID": 3, "title": "Another Regular Post", "content": "No tripData"}
         ]
         
-        with patch("app.routes.community_route.database") as mock_db:
+        with patch("app.database.database") as mock_db:
             mock_communities = AsyncMock()
             mock_communities.find_one.return_value = {
                 "_id": ObjectId(community_id),

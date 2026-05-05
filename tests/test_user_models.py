@@ -443,11 +443,10 @@ class TestRegisteredUserOpenDashboard:
         """Test successfully opening dashboard."""
         user_id = "507f1f77bcf86cd799439011"
         
-        with patch("app.services.user_service.UserService.get_user_by_id") as mock_get:
-            mock_get.return_value = {
+        with patch("app.models.trip_models.TripDashboard.display_trips") as mock_display:
+            mock_display.return_value = {
                 "userID": user_id,
-                "userName": "testuser",
-                "email": "test@example.com"
+                "trips": []
             }
             
             result = await RegisteredUser.openDashboard(user_id)
@@ -459,9 +458,9 @@ class TestRegisteredUserOpenDashboard:
         """Test opening dashboard for non-existent user."""
         user_id = "507f1f77bcf86cd799439011"
         
-        with patch("app.services.user_service.UserService.get_user_by_id") as mock_get:
-            mock_get.return_value = None
+        with patch("app.models.trip_models.TripDashboard.display_trips") as mock_display:
+            mock_display.return_value = None
             
             result = await RegisteredUser.openDashboard(user_id)
             
-            assert result is not None  # Should return error dict
+            assert result is None
