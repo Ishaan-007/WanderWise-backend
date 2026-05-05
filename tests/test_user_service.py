@@ -252,18 +252,19 @@ class TestUserServiceFollow:
             
             mock_db.__getitem__.side_effect = mock_getitem
             # Bulletproof async context manager mock
-            @asynccontextmanager
-            async def mock_start_session(*args, **kwargs):
-                session_mock = AsyncMock()
-                
-                @asynccontextmanager
-                async def mock_start_transaction(*args, **kwargs):
-                    yield  # This perfectly simulates the 'async with' block
-                    
-                session_mock.start_transaction = mock_start_transaction
-                yield session_mock
+            # Bulletproof pure-Python mock for MongoDB sessions/transactions
+            class MockTransaction:
+                async def __aenter__(self): return self
+                async def __aexit__(self, exc_type, exc_val, exc_tb): pass
 
-            mock_db.client.start_session = mock_start_session
+            class MockSession:
+                async def __aenter__(self): return self
+                async def __aexit__(self, exc_type, exc_val, exc_tb): pass
+                def start_transaction(self): return MockTransaction()
+
+            mock_db.client.start_session = AsyncMock(return_value=MockSession())
+
+            #mock_db.client.start_session = mock_start_session
             
             result = await UserService.follow_user(follower_id, target_id)
             
@@ -333,18 +334,19 @@ class TestUserServiceFollow:
             
             mock_db.__getitem__.side_effect = mock_getitem
             # Bulletproof async context manager mock
-            @asynccontextmanager
-            async def mock_start_session(*args, **kwargs):
-                session_mock = AsyncMock()
-                
-                @asynccontextmanager
-                async def mock_start_transaction(*args, **kwargs):
-                    yield  # This perfectly simulates the 'async with' block
-                    
-                session_mock.start_transaction = mock_start_transaction
-                yield session_mock
+            # Bulletproof pure-Python mock for MongoDB sessions/transactions
+            class MockTransaction:
+                async def __aenter__(self): return self
+                async def __aexit__(self, exc_type, exc_val, exc_tb): pass
 
-            mock_db.client.start_session = mock_start_session
+            class MockSession:
+                async def __aenter__(self): return self
+                async def __aexit__(self, exc_type, exc_val, exc_tb): pass
+                def start_transaction(self): return MockTransaction()
+
+            mock_db.client.start_session = AsyncMock(return_value=MockSession())
+
+            #mock_db.client.start_session = mock_start_session
             
             result = await UserService.unfollow_user(follower_id, target_id)
             
