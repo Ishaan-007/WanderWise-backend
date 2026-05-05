@@ -493,7 +493,7 @@ class TestCommunityGetAllPosts:
                     "posts": [{"postID": 1, "title": "Post 1"}]
                 }
             
-            mock_communities.find.return_value = async_cursor()
+            mock_communities.find = MagicMock(return_value=async_cursor())
             mock_users.find_one.return_value = None
             
             def mock_getitem(key):
@@ -518,7 +518,7 @@ class TestCommunityGetAllPosts:
                 return
                 yield
             
-            mock_communities.find.return_value = empty_cursor()
+            mock_communities.find = MagicMock(return_value=empty_cursor())
             mock_db.__getitem__.return_value = mock_communities
             
             result = await Community.get_all_posts()
@@ -538,7 +538,7 @@ class TestCommunityGetAllPosts:
                     "posts": [{"postID": 1, "title": "Post 1"}]
                 }
             
-            mock_communities.find.return_value = async_cursor()
+            mock_communities.find = MagicMock(return_value=async_cursor())
             mock_users.find_one.return_value = None
             
             def mock_getitem(key):

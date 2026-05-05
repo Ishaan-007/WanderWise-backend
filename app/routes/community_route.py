@@ -97,6 +97,8 @@ async def view_trip_posts(communityID: str):
             "trip_posts": trip_posts
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     

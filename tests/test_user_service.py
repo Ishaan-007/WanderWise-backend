@@ -251,7 +251,7 @@ class TestUserServiceFollow:
             
             mock_db.__getitem__.side_effect = mock_getitem
             mock_session = AsyncMock()
-            mock_session.start_transaction.return_value.__aenter__.return_value = None
+            mock_session.start_transaction.return_value = AsyncMock()
             mock_session.__aenter__.return_value = mock_session
             mock_db.client.start_session = AsyncMock(return_value=mock_session)
             
@@ -323,7 +323,7 @@ class TestUserServiceFollow:
             
             mock_db.__getitem__.side_effect = mock_getitem
             mock_session = AsyncMock()
-            mock_session.start_transaction.return_value.__aenter__.return_value = None
+            mock_session.start_transaction.return_value = AsyncMock()
             mock_session.__aenter__.return_value = mock_session
             mock_db.client.start_session = AsyncMock(return_value=mock_session)
             

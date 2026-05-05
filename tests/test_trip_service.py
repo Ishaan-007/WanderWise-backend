@@ -99,10 +99,11 @@ class TestTripServiceGetTrip:
             mock_trips.find = MagicMock(return_value=async_iter())
             mock_db.__getitem__.return_value = mock_trips
             
+            expected_id = str(sample_trip_document["_id"])
             result = await TripService.get_trips_by_user(user_id)
             
             assert len(result) == 1
-            assert result[0]["tripID"] == str(sample_trip_document["_id"])
+            assert result[0]["tripID"] == expected_id
 
     @pytest.mark.asyncio
     async def test_get_trips_by_user_empty(self):
