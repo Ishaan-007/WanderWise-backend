@@ -13,6 +13,7 @@ import pytest
 from unittest.mock import patch, AsyncMock, MagicMock
 from bson import ObjectId
 from app.services.user_service import UserService
+from contextlib import asynccontextmanager
 
 
 class TestUserServiceRegister:
@@ -250,10 +251,19 @@ class TestUserServiceFollow:
                     return mock_follows
             
             mock_db.__getitem__.side_effect = mock_getitem
-            mock_session = AsyncMock()
-            mock_session.start_transaction.return_value = AsyncMock()
-            mock_session.__aenter__.return_value = mock_session
-            mock_db.client.start_session = AsyncMock(return_value=mock_session)
+            # Bulletproof async context manager mock
+            @asynccontextmanager
+            async def mock_start_session(*args, **kwargs):
+                session_mock = AsyncMock()
+                
+                @asynccontextmanager
+                async def mock_start_transaction(*args, **kwargs):
+                    yield  # This perfectly simulates the 'async with' block
+                    
+                session_mock.start_transaction = mock_start_transaction
+                yield session_mock
+
+            mock_db.client.start_session = mock_start_session
             
             result = await UserService.follow_user(follower_id, target_id)
             
@@ -322,10 +332,19 @@ class TestUserServiceFollow:
                     return mock_follows
             
             mock_db.__getitem__.side_effect = mock_getitem
-            mock_session = AsyncMock()
-            mock_session.start_transaction.return_value = AsyncMock()
-            mock_session.__aenter__.return_value = mock_session
-            mock_db.client.start_session = AsyncMock(return_value=mock_session)
+            # Bulletproof async context manager mock
+            @asynccontextmanager
+            async def mock_start_session(*args, **kwargs):
+                session_mock = AsyncMock()
+                
+                @asynccontextmanager
+                async def mock_start_transaction(*args, **kwargs):
+                    yield  # This perfectly simulates the 'async with' block
+                    
+                session_mock.start_transaction = mock_start_transaction
+                yield session_mock
+
+            mock_db.client.start_session = mock_start_session
             
             result = await UserService.unfollow_user(follower_id, target_id)
             
