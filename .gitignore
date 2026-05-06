@@ -98,3 +98,6 @@ wanderwise-keyx
 
 # Ansible Inventory (Optional, but good if it contains hardcoded IPs)
 inventory.ini
+
+prometheus.yml
+sonar-project.properties
