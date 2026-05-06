@@ -84,3 +84,17 @@ test_backend.py
 test_backend_2.py
 test_backend_3.py
 *_2.py
+
+# Terraform State & Secrets
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Ansible & SSH Secrets
+*.pem
+*.key
+wanderwise-keyx
+# DO NOT ignore wanderwise-keyx.pub (Public keys are safe to push)
+
+# Ansible Inventory (Optional, but good if it contains hardcoded IPs)
+inventory.ini

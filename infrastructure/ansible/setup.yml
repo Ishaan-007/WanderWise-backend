@@ -1,0 +1,49 @@
+- name: Setup DevOps Server
+  hosts: aws
+  become: true
+
+  tasks:
+
+    - name: Update packages
+      apt:
+        update_cache: yes
+
+    - name: Install Docker
+      apt:
+        name: docker.io
+        state: present
+
+    - name: Start Docker
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add ubuntu user to docker group
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes
+
+    - name: Remove old Jenkins container if exists
+      docker_container:
+        name: jenkins
+        state: absent
+        force_kill: yes
+
+    - name: Run Jenkins container (optimized for Docker-in-Docker pipelines)
+      docker_container:
+        name: jenkins
+        image: jenkins/jenkins:lts
+        state: started
+        restart_policy: always
+        user: root  # CRITICAL: Allows Jenkins to use the Docker socket for pipeline execution
+        ports:
+          - "8080:8080"
+          - "50000:50000"
+        volumes:
+          - jenkins_home:/var/jenkins_home
+          - /var/run/docker.sock:/var/run/docker.sock  # Binds host Docker to Jenkins
+          - /usr/bin/docker:/usr/bin/docker  # Maps the Docker CLI tool
+        env:
+          JAVA_OPTS: "-Xmx512m"
